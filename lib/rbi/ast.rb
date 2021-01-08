@@ -410,11 +410,16 @@ class RBI
     end
   end
 
-  class TypeTemplate < Call
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:type_template, [name, *names])
-    end
+  class Visibility < Call
+    extend T::Helpers
+
+    abstract!
+  end
+
+  class Public < Visibility
+  end
+
+  class Private < Visibility
   end
 
   class Sig

@@ -105,8 +105,6 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_const_assign(node)
-      puts "----"
-      puts node.children.join(", ")
       name = if node.children[0]
         visit_name(node.children[0])
       else

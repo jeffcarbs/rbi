@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'sorbet-runtime'
 require 'stringio'
 require 'thor'
