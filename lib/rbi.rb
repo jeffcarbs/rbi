@@ -4,6 +4,8 @@
 require 'sorbet-runtime'
 require 'thor'
 
+require 'rbi/ast'
+require 'rbi/printer'
 require 'rbi/version'
 require 'rbi/cli'
 
