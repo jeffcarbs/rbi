@@ -2,14 +2,16 @@
 # frozen_string_literal: true
 
 require 'sorbet-runtime'
+require 'stringio'
 require 'thor'
-
-require 'rbi/ast'
-require 'rbi/parser'
-require 'rbi/printer'
-require 'rbi/version'
-require 'rbi/cli'
 
 class RBI
   class Error < StandardError; end
 end
+
+require 'rbi/ast'
+require 'rbi/parser'
+require 'rbi/builder'
+require 'rbi/printer'
+require 'rbi/version'
+require 'rbi/cli'

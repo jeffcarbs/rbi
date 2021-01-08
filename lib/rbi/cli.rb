@@ -12,16 +12,14 @@ class RBI
 
     desc 'RBI', ''
     def rbi(*paths)
-      parser = Parser.new
+      rbis = parse_rbis(paths)
+      rbis.each { |rbi| print rbi.to_rbi }
+    end
 
-      paths << '.' if paths.empty?
-      files = parser.list_files(*paths)
-
-      puts files
-
-      # TODO list files
-      # TODO parser files
-      # TODO show result
+    desc 'format', ''
+    def format(*paths)
+      rbis = parse_rbis(paths)
+      rbis.each { |rbi| print rbi.to_rbi }
     end
 
     desc '--version', 'Show version'
@@ -31,6 +29,14 @@ class RBI
 
     def self.exit_on_failure?
       true
+    end
+
+    no_commands do
+      def parse_rbis(*paths)
+        paths << '.' if paths.empty?
+        files = T.unsafe(Parser).list_files(*paths)
+        files.map { |file| RBI.from_file(file) }
+      end
     end
   end
 end

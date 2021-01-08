@@ -140,7 +140,7 @@ class RBI
       v.printt(method.to_s)
       unless args.empty?
         v.print(" ")
-        v.print(args.join(","))
+        v.print(args.join(", "))
       end
       v.printn
     end
@@ -193,7 +193,7 @@ class RBI
       v.printt(method.to_s)
       unless names.empty?
         v.print(" ")
-        v.print(names.map { |name| ":#{name}" }.join(","))
+        v.print(names.map { |name| ":#{name}" }.join(", "))
       end
       v.printn
     end
@@ -255,7 +255,7 @@ class RBI
         v.print("*")
       end
       v.print(name.to_s)
-      if is_keyword
+      if is_keyword && !is_rest
         v.print(":")
       end
       value = self.value

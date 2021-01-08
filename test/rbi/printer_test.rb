@@ -95,8 +95,8 @@ class RBI
       rbi = RBI.new
       rbi << Const.new("FOO")
       rbi << Const.new("FOO", value: "42")
-      rbi << AttrReader.new("foo")
-      rbi << AttrAccessor.new("foo")
+      rbi << AttrReader.new(:foo)
+      rbi << AttrAccessor.new(:foo)
       rbi << Method.new("foo")
       rbi << Method.new("foo", params: [Param.new("a")])
       rbi << Method.new("foo", params: [Param.new("a"), Param.new("b"), Param.new("c")])
@@ -123,8 +123,8 @@ class RBI
       foo = Class.new("Foo")
       foo << Const.new("FOO")
       foo << Const.new("FOO", value: "42")
-      foo << AttrReader.new("foo")
-      foo << AttrAccessor.new("foo")
+      foo << AttrReader.new(:foo)
+      foo << AttrAccessor.new(:foo)
       foo << Method.new("foo")
       foo << Method.new("foo", params: [Param.new("a")])
       foo << Method.new("foo", params: [
@@ -158,11 +158,11 @@ class RBI
 
     def test_attr_sigs
       rbi = RBI.new
-      rbi << AttrReader.new("foo")
-      rbi << AttrReader.new("foo", type: nil)
-      rbi << AttrReader.new("foo", type: "Foo")
-      rbi << AttrAccessor.new("foo", type: "Foo")
-      rbi << AttrAccessor.new("foo")
+      rbi << AttrReader.new(:foo)
+      rbi << AttrReader.new(:foo, type: nil)
+      rbi << AttrReader.new(:foo, type: "Foo")
+      rbi << AttrAccessor.new(:foo, type: "Foo")
+      rbi << AttrAccessor.new(:foo)
 
       assert_equal(<<~RBI, rbi.to_rbi)
         attr_reader :foo

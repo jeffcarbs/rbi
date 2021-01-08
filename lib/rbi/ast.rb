@@ -200,6 +200,7 @@ class RBI
     sig { params(name: String, type: String, default: T.nilable(String)).void }
     def initialize(name, type:, default: nil)
       args = []
+      args << ":#{name}"
       args << "typed: #{type}"
       args << "default: #{default}" if default
       super(:prop, args)
@@ -239,7 +240,7 @@ class RBI
   class AttrReader < Attr
     extend T::Sig
 
-    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
       super(:attr_reader, [name, *names], type: type)
     end
@@ -253,7 +254,7 @@ class RBI
   class AttrWriter < Attr
     extend T::Sig
 
-    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
       super(:attr_writer, [name, *names], type: type)
     end
@@ -261,7 +262,7 @@ class RBI
     sig { override.returns(Sig) }
     def default_sig
       Sig.new(params: [
-        Param.new(T.must(names.first), type: type),
+        Param.new(T.must(names.first&.to_s), type: type),
       ], returns: "void")
     end
   end
@@ -269,7 +270,7 @@ class RBI
   class AttrAccessor < Attr
     extend T::Sig
 
-    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
       super(:attr_accessor, [name, *names], type: type)
     end
