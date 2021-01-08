@@ -13,13 +13,13 @@ class RBI
     desc 'RBI', ''
     def rbi(*paths)
       rbis = parse_rbis(paths)
-      rbis.each { |rbi| print rbi.to_rbi }
+      rbis.each { |rbi| print(rbi.to_rbi) }
     end
 
     desc 'format', ''
     def format(*paths)
       rbis = parse_rbis(paths)
-      rbis.each { |rbi| print rbi.to_rbi }
+      rbis.each { |rbi| print(rbi.to_rbi) }
     end
 
     desc '--version', 'Show version'
@@ -32,7 +32,7 @@ class RBI
     end
 
     no_commands do
-      def parse_rbis(*paths)
+      def parse_rbis(paths)
         paths << '.' if paths.empty?
         files = T.unsafe(Parser).list_files(*paths)
         files.map { |file| RBI.from_file(file) }

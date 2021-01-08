@@ -107,12 +107,12 @@ class RBI
     def visit_const_assign(node)
       puts "----"
       puts node.children.join(", ")
-      if node.children[0]
-        name = visit_name(node.children[0])
+      name = if node.children[0]
+        visit_name(node.children[0])
       else
-        name = node.children[1].to_s
+        node.children[1].to_s
       end
-      # TODO parse value
+      # TODO: parse value
       @current_scope << Const.new(name)
     end
 
@@ -194,10 +194,10 @@ class RBI
       end
     end
 
-    sig { params(node: AST::Node).void }
-    def visit_sig(node)
+    sig { params(_node: AST::Node).void }
+    def visit_sig(_node)
       raise "Already in a sig" if @last_sig
-      @last_sig = Sig.new # TODO parse sig
+      @last_sig = Sig.new # TODO: parse sig
     end
 
     # Utils
