@@ -1,27 +1,25 @@
 # typed: strict
 # frozen_string_literal: true
 
-module RBI
-  class File
-    extend T::Sig
-    sig do
-      params(
-        out: T.any(IO, StringIO),
-        default_indent: Integer,
-      ).returns(String)
-    end
-    def to_rbi(
-      out: $stdout,
-      default_indent: 0
+class RBI
+  extend T::Sig
+  sig do
+    params(
+      out: T.any(IO, StringIO),
+      default_indent: Integer,
+    ).returns(String)
+  end
+  def to_rbi(
+    out: $stdout,
+    default_indent: 0
+  )
+    out = StringIO.new
+    p = Printer.new(
+      out: out,
+      default_indent: default_indent,
     )
-      out = StringIO.new
-      p = Printer.new(
-        out: out,
-        default_indent: default_indent,
-      )
-      p.visit_all(@root.body)
-      out.string
-    end
+    p.visit_all(@root.body)
+    out.string
   end
 
   class Printer

@@ -1,29 +1,20 @@
 # typed: strict
 # frozen_string_literal: true
 
-module RBI
+class RBI
   extend T::Sig
 
-  sig { returns(File) }
-  def self.new
-    File.new
+  sig { returns(Module) }
+  attr_reader :root
+
+  sig { void }
+  def initialize
+    @root = T.let(Module.new("<root>"), Module)
   end
 
-  class File
-    extend T::Sig
-
-    sig { returns(Module) }
-    attr_reader :root
-
-    sig { void }
-    def initialize
-      @root = T.let(Module.new("<root>"), Module)
-    end
-
-    sig { params(node: Def).void }
-    def <<(node)
-      @root << node
-    end
+  sig { params(node: Def).void }
+  def <<(node)
+    @root << node
   end
 
   module Node

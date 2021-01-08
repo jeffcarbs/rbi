@@ -3,7 +3,7 @@
 
 require "test_helper"
 
-module RBI
+class RBI
   class PrinterTest < Minitest::Test
     extend T::Sig
     # Scope
