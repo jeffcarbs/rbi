@@ -251,7 +251,9 @@ module RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      if is_rest
+      if is_rest && is_keyword
+        v.print("**")
+      elsif is_rest
         v.print("*")
       end
       v.print(name.to_s)

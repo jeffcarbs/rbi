@@ -188,6 +188,33 @@ module RBI
     end
   end
 
+  class TStruct < Class
+    extend T::Sig
+
+    sig do
+      params(
+        name: String,
+        abstract: T::Boolean,
+        sealed: T::Boolean,
+      ).void
+    end
+    def initialize(name, abstract: false, sealed: false)
+      super(name, abstract: abstract, sealed: sealed, superclass: "T::Struct")
+    end
+  end
+
+  class TProp < Call
+    extend T::Sig
+
+    sig { params(name: String, type: String, default: T.nilable(String)).void }
+    def initialize(name, type:, default: nil)
+      args = []
+      args << "typed: #{type}"
+      args << "default: #{default}" if default
+      super(:prop, args)
+    end
+  end
+
   class Attr < Call
     extend T::Sig
     extend T::Helpers

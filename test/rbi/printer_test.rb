@@ -80,6 +80,15 @@ module RBI
       RBI
     end
 
+    def test_tstruct
+      rbi = RBI.new
+      rbi << TStruct.new("C")
+
+      assert_equal(<<~RBI, rbi.to_rbi)
+        class C < T::Struct; end
+      RBI
+    end
+
     # Props
 
     def test_props
