@@ -243,7 +243,7 @@ module RBI
     sig { override.returns(Sig) }
     def default_sig
       Sig.new(params: [
-        Param.new(T.must(names.first), type: type)
+        Param.new(T.must(names.first), type: type),
       ], returns: "void")
     end
   end
@@ -259,7 +259,7 @@ module RBI
     sig { override.returns(Sig) }
     def default_sig
       Sig.new(params: [
-        Param.new(T.must(names.first), type: type)
+        Param.new(T.must(names.first), type: type),
       ], returns: type)
     end
   end
@@ -323,6 +323,9 @@ module RBI
     sig { returns(T::Boolean) }
     attr_reader :is_keyword
 
+    sig { returns(T::Boolean) }
+    attr_reader :is_rest
+
     sig { returns(T.nilable(String)) }
     attr_reader :value
 
@@ -333,13 +336,15 @@ module RBI
       params(
         name: String,
         is_keyword: T::Boolean,
+        is_rest: T::Boolean,
         value: T.nilable(String),
         type: T.nilable(String)
       ).void
     end
-    def initialize(name, is_keyword: false, value: nil, type: nil)
+    def initialize(name, is_keyword: false, is_rest: false, value: nil, type: nil)
       super(name)
       @is_keyword = is_keyword
+      @is_rest = is_rest
       @value = value
       @type = type
     end
@@ -372,7 +377,26 @@ module RBI
     end
   end
 
-  # Sorbet
+  class MixesInClassMethods < Call
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:mixes_in_class_methods, [name, *names])
+    end
+  end
+
+  class TypeMember < Call
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:type_member, [name, *names])
+    end
+  end
+
+  class TypeTemplate < Call
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:type_template, [name, *names])
+    end
+  end
 
   class Sig
     extend T::Sig

@@ -128,8 +128,8 @@ module RBI
       v.printl("end")
     end
 
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def oneline?(v)
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def oneline?(_v)
       body.empty?
     end
   end
@@ -251,6 +251,9 @@ module RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      if is_rest
+        v.print("*")
+      end
       v.print(name.to_s)
       if is_keyword
         v.print(":")
