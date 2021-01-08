@@ -3,6 +3,7 @@ PATH
   specs:
     rbi (0.0.1)
       colorize
+      parser
       sorbet (~> 0.5.5)
       sorbet-runtime
       thor (>= 0.19.2)
