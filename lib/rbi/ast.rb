@@ -29,6 +29,7 @@ module RBI
   module Node
     extend T::Sig
     extend T::Helpers
+    include Kernel
 
     interface!
   end
@@ -51,7 +52,7 @@ module RBI
 
     sig { returns(String) }
     def to_s
-      name
+      name.to_s
     end
   end
 
@@ -84,20 +85,20 @@ module RBI
     end
   end
 
-  class Call < Node
+  class Call
     extend T::Sig
     extend T::Helpers
     include Def
 
     abstract!
 
-    sig { returns(String) }
+    sig { returns(::Symbol) }
     attr_reader :method
 
     sig { returns(T::Array[String]) }
     attr_reader :args
 
-    sig { params(method: String, args: T::Array[String]).void }
+    sig { params(method: ::Symbol, args: T::Array[String]).void }
     def initialize(method, args = [])
       @method = method
       @args = args
@@ -107,24 +108,27 @@ module RBI
   class Module < Scope
     extend T::Sig
 
-    sig { returns(T::Boolean) }
-    attr_reader :is_interface
-
-    sig { params(name: String, is_interface: T::Boolean).void }
-    def initialize(name, is_interface: false)
+    sig { params(name: String, interface: T::Boolean).void }
+    def initialize(name, interface: false)
       super(name)
-      @is_interface = is_interface
+      body << Interface.new if interface
+    end
+
+    sig { returns(T::Boolean) }
+    def interface?
+      body.one? { |body| body.is_a?(Interface) }
+    end
+  end
+
+  class Interface < Call
+    sig { void }
+    def initialize
+      super(:interface!, [])
     end
   end
 
   class Class < Scope
     extend T::Sig
-
-    sig { returns(T::Boolean) }
-    attr_reader :is_abstract
-
-    sig { returns(T::Boolean) }
-    attr_reader :is_sealed
 
     sig { returns(T.nilable(String)) }
     attr_reader :superclass
@@ -132,25 +136,49 @@ module RBI
     sig do
       params(
         name: String,
-        is_abstract: T::Boolean,
-        is_sealed: T::Boolean,
+        abstract: T::Boolean,
+        sealed: T::Boolean,
         superclass: T.nilable(String)
       ).void
     end
-    def initialize(name, is_abstract: false, is_sealed: false, superclass: nil)
+    def initialize(name, abstract: false, sealed: false, superclass: nil)
       super(name)
-      @is_abstract = is_abstract
-      @is_sealed = is_sealed
+      body << Abstract.new if abstract
+      body << Sealed.new if sealed
       @superclass = superclass
+    end
+
+    sig { returns(T::Boolean) }
+    def abstract?
+      body.one? { |body| body.is_a?(Abstract) }
+    end
+
+    sig { returns(T::Boolean) }
+    def sealed?
+      body.one? { |body| body.is_a?(Sealed) }
     end
   end
 
-  class Attr < Symbol
+  class Abstract < Call
+    sig { void }
+    def initialize
+      super(:abstract!, [])
+    end
+  end
+
+  class Sealed < Call
+    sig { void }
+    def initialize
+      super(:sealed!, [])
+    end
+  end
+
+  class Attr < Call
     extend T::Sig
+    extend T::Helpers
     include Def
 
-    sig { returns(T::Boolean) }
-    attr_reader :is_setter
+    abstract!
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -158,20 +186,66 @@ module RBI
     sig { returns(T::Array[Sig]) }
     attr_reader :sigs
 
-    sig { params(name: String, is_setter: T::Boolean, type: T.nilable(String)).void }
-    def initialize(name, is_setter: false, type: nil)
-      super(name)
-      @is_setter = is_setter
+    sig { params(kind: ::Symbol, names: T::Array[::Symbol], type: T.nilable(String)).void }
+    def initialize(kind, names, type: nil)
+      super(kind, names)
       @type = type
       @sigs = T.let([], T::Array[Sig])
       @sigs << default_sig if type
     end
 
-    sig { returns(Sig) }
+    sig { abstract.returns(Sig) }
+    def default_sig; end
+
+    sig { returns(T::Array[String]) }
+    def names
+      args
+    end
+  end
+
+  class AttrReader < Attr
+    extend T::Sig
+
+    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    def initialize(name, *names, type: nil)
+      super(:attr_reader, [name, *names], type: type)
+    end
+
+    sig { override.returns(Sig) }
     def default_sig
-      params = []
-      params << Param.new(name, type: type) if is_setter
-      Sig.new(params: params, returns: type)
+      Sig.new(returns: type)
+    end
+  end
+
+  class AttrWriter < Attr
+    extend T::Sig
+
+    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    def initialize(name, *names, type: nil)
+      super(:attr_writer, [name, *names], type: type)
+    end
+
+    sig { override.returns(Sig) }
+    def default_sig
+      Sig.new(params: [
+        Param.new(T.must(names.first), type: type)
+      ], returns: "void")
+    end
+  end
+
+  class AttrAccessor < Attr
+    extend T::Sig
+
+    sig { params(name: String, names: ::Symbol, type: T.nilable(String)).void }
+    def initialize(name, *names, type: nil)
+      super(:attr_accessor, [name, *names], type: type)
+    end
+
+    sig { override.returns(Sig) }
+    def default_sig
+      Sig.new(params: [
+        Param.new(T.must(names.first), type: type)
+      ], returns: type)
     end
   end
 
@@ -256,37 +330,31 @@ module RBI
     end
   end
 
-  class Ancestor
+  class Include < Call
     extend T::Sig
-    extend T::Helpers
-    include Def
 
-    abstract!
-
-    sig { returns(String) }
-    attr_reader :name
-
-    sig { params(name: String).void }
-    def initialize(name)
-      @name = name
-    end
-
-    sig { returns(String) }
-    def to_s
-      name
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:include, [name, *names])
     end
   end
 
-  class Include < Ancestor
+  class Extend < Call
     extend T::Sig
+
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:extend, [name, *names])
+    end
   end
 
-  class Extend < Ancestor
+  class Prepend < Call
     extend T::Sig
-  end
 
-  class Prepend < Ancestor
-    extend T::Sig
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:prepend, [name, *names])
+    end
   end
 
   # Sorbet

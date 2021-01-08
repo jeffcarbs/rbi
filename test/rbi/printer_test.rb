@@ -39,6 +39,17 @@ module RBI
       RBI
     end
 
+    def test_module_with_modifiers
+      rbi = RBI.new
+      rbi << Module.new("M", interface: true)
+
+      assert_equal(<<~RBI, rbi.to_rbi)
+        module M
+          interface!
+        end
+      RBI
+    end
+
     def test_class
       rbi = RBI.new
       rbi << Class.new("C")
@@ -50,7 +61,7 @@ module RBI
 
     def test_class_with_modifiers
       rbi = RBI.new
-      rbi << Class.new("C", superclass: "A", is_abstract: true, is_sealed: true)
+      rbi << Class.new("C", superclass: "A", abstract: true, sealed: true)
 
       assert_equal(<<~RBI, rbi.to_rbi)
         class C < A
@@ -75,8 +86,8 @@ module RBI
       rbi = RBI.new
       rbi << Const.new("FOO")
       rbi << Const.new("FOO", value: "42")
-      rbi << Attr.new("foo")
-      rbi << Attr.new("foo", is_setter: true)
+      rbi << AttrReader.new("foo")
+      rbi << AttrAccessor.new("foo")
       rbi << Method.new("foo")
       rbi << Method.new("foo", params: [Param.new("a")])
       rbi << Method.new("foo", params: [Param.new("a"), Param.new("b"), Param.new("c")])
@@ -103,8 +114,8 @@ module RBI
       foo = Class.new("Foo")
       foo << Const.new("FOO")
       foo << Const.new("FOO", value: "42")
-      foo << Attr.new("foo")
-      foo << Attr.new("foo", is_setter: true)
+      foo << AttrReader.new("foo")
+      foo << AttrAccessor.new("foo")
       foo << Method.new("foo")
       foo << Method.new("foo", params: [Param.new("a")])
       foo << Method.new("foo", params: [
@@ -138,11 +149,11 @@ module RBI
 
     def test_attr_sigs
       rbi = RBI.new
-      rbi << Attr.new("foo")
-      rbi << Attr.new("foo", type: nil)
-      rbi << Attr.new("foo", type: "Foo")
-      rbi << Attr.new("foo", type: "Foo", is_setter: true)
-      rbi << Attr.new("foo", is_setter: true)
+      rbi << AttrReader.new("foo")
+      rbi << AttrReader.new("foo", type: nil)
+      rbi << AttrReader.new("foo", type: "Foo")
+      rbi << AttrAccessor.new("foo", type: "Foo")
+      rbi << AttrAccessor.new("foo")
 
       assert_equal(<<~RBI, rbi.to_rbi)
         attr_reader :foo

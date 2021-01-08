@@ -121,6 +121,7 @@ module RBI
         v.printn("; end")
         return
       end
+      v.printn
       v.indent
       v.visit_all(body)
       v.dedent
@@ -130,6 +131,25 @@ module RBI
     sig { override.params(v: Printer).returns(T::Boolean) }
     def oneline?(v)
       body.empty?
+    end
+  end
+
+  class Call
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.printt(method.to_s)
+      unless args.empty?
+        v.print(" ")
+        v.print(args.join(","))
+      end
+      v.printn
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def oneline?(_v)
+      true
     end
   end
 
@@ -144,7 +164,7 @@ module RBI
 
     sig { override.params(v: Printer).returns(T::Boolean) }
     def oneline?(v)
-      !is_interface && super(v)
+      !interface? && super(v)
     end
   end
 
@@ -162,7 +182,7 @@ module RBI
 
     sig { override.params(v: Printer).returns(T::Boolean) }
     def oneline?(v)
-      !is_abstract && !is_sealed && super(v)
+      !abstract? && !sealed? && super(v)
     end
   end
 
@@ -172,11 +192,12 @@ module RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       sigs.each { |sig| v.visit(sig) }
-      if is_setter
-        v.printl("attr_accessor :#{name}")
-      else
-        v.printl("attr_reader :#{name}")
+      v.printt(method.to_s)
+      unless names.empty?
+        v.print(" ")
+        v.print(names.map { |name| ":#{name}" }.join(","))
       end
+      v.printn
     end
 
     sig { override.params(_v: Printer).returns(T::Boolean) }
@@ -190,7 +211,7 @@ module RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.printt(name)
+      v.printt(name.to_s)
       value = self.value
       if value
         v.print(" = #{value}")
@@ -207,7 +228,7 @@ module RBI
       sigs.each { |sig| v.visit(sig) }
       v.printt("def ")
       v.print("self.") if is_singleton
-      v.print(name)
+      v.print(name.to_s)
       unless params.empty?
         v.print("(")
         params.each_with_index do |param, index|
@@ -230,7 +251,7 @@ module RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print(name)
+      v.print(name.to_s)
       if is_keyword
         v.print(":")
       end
@@ -239,42 +260,6 @@ module RBI
         v.print(" =") unless is_keyword
         v.print(" #{value}")
       end
-    end
-  end
-
-  class Ancestor
-    extend T::Sig
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      true
-    end
-  end
-
-  class Include
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.printl("include #{name}")
-    end
-  end
-
-  class Extend
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.printl("extend #{name}")
-    end
-  end
-
-  class Prepend
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.printl("prepend #{name}")
     end
   end
 
@@ -290,11 +275,11 @@ module RBI
         v.print("params(")
         params.each_with_index do |param, index|
           v.print(", ") if index > 0
-          v.print(param.name)
+          v.print(param.name.to_s)
           v.print(": ")
           type = param.type
           if type
-            v.print(type)
+            v.print(type.to_s)
           else
             v.print("T.untyped")
           end
