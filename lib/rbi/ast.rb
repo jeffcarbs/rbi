@@ -111,7 +111,12 @@ module RBI
     sig { params(name: String, interface: T::Boolean).void }
     def initialize(name, interface: false)
       super(name)
-      body << Interface.new if interface
+      interface! if interface
+    end
+
+    sig { void }
+    def interface!
+      body << Interface.new
     end
 
     sig { returns(T::Boolean) }
@@ -143,14 +148,24 @@ module RBI
     end
     def initialize(name, abstract: false, sealed: false, superclass: nil)
       super(name)
-      body << Abstract.new if abstract
-      body << Sealed.new if sealed
+      abstract! if abstract
+      sealed! if sealed
       @superclass = superclass
+    end
+
+    sig { void }
+    def abstract!
+      body << Abstract.new
     end
 
     sig { returns(T::Boolean) }
     def abstract?
       body.one? { |body| body.is_a?(Abstract) }
+    end
+
+    sig { void }
+    def sealed!
+      body << Sealed.new
     end
 
     sig { returns(T::Boolean) }
