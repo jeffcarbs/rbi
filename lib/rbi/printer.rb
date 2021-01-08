@@ -84,7 +84,7 @@ class RBI
     def visit_all(nodes)
       previous = T.let(nil, T.nilable(Node))
       nodes.each_with_index do |node, _index|
-        printn unless !previous || (previous.oneline?(self) && node.oneline?(self))
+        printn if previous && (previous.new_line_after?(self) || node.new_line_before?(self))
         visit(node)
         previous = node
       end
@@ -99,6 +99,12 @@ class RBI
 
     sig { abstract.params(_v: Printer).returns(T::Boolean) }
     def oneline?(_v); end
+
+    sig { abstract.params(_v: Printer).returns(T::Boolean) }
+    def new_line_before?(_v); end
+
+    sig { abstract.params(_v: Printer).returns(T::Boolean) }
+    def new_line_after?(_v); end
   end
 
   class Symbol
@@ -107,6 +113,16 @@ class RBI
     sig { override.params(_v: Printer).returns(T::Boolean) }
     def oneline?(_v)
       true
+    end
+
+    sig { override.params(v: Printer).returns(T::Boolean) }
+    def new_line_before?(v)
+      !oneline?(v)
+    end
+
+    sig { override.params(v: Printer).returns(T::Boolean) }
+    def new_line_after?(v)
+      !oneline?(v)
     end
   end
 
@@ -148,6 +164,16 @@ class RBI
     sig { override.params(_v: Printer).returns(T::Boolean) }
     def oneline?(_v)
       true
+    end
+
+    sig { override.params(v: Printer).returns(T::Boolean) }
+    def new_line_before?(v)
+      !oneline?(v)
+    end
+
+    sig { override.params(v: Printer).returns(T::Boolean) }
+    def new_line_after?(v)
+      !oneline?(v)
     end
   end
 
@@ -244,25 +270,81 @@ class RBI
     end
   end
 
-  class Param
+  class Arg
     extend T::Sig
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      if is_rest && is_keyword
-        v.print("**")
-      elsif is_rest
-        v.print("*")
-      end
       v.print(name.to_s)
-      if is_keyword && !is_rest
-        v.print(":")
-      end
-      value = self.value
-      if value
-        v.print(" =") unless is_keyword
-        v.print(" #{value}")
-      end
+    end
+
+  end
+
+  class OptArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("#{name.to_s} = #{value}")
+    end
+  end
+
+  class RestArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("*#{name.to_s}")
+    end
+  end
+
+  class KwArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("#{name.to_s}:")
+    end
+  end
+
+  class KwOptArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("#{name.to_s}: #{value}")
+    end
+  end
+
+  class KwRestArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("**#{name.to_s}")
+    end
+  end
+
+  class BlockArg
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("&#{name.to_s}")
+    end
+  end
+
+  class Visibility
+    extend T::Sig
+
+    sig { override.params(v: Printer).returns(T::Boolean) }
+    def new_line_before?(v)
+      true
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_after?(_v)
+      true
     end
   end
 
@@ -303,6 +385,16 @@ class RBI
     sig { override.params(_v: Printer).returns(T::Boolean) }
     def oneline?(_v)
       true
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_before?(_v)
+      true
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_after?(_v)
+      false
     end
   end
 end

@@ -278,7 +278,7 @@ class RBI
     sig { override.returns(Sig) }
     def default_sig
       Sig.new(params: [
-        Param.new(T.must(names.first), type: type),
+        Param.new(T.must(names.first.to_s), type: type),
       ], returns: type)
     end
   end
@@ -337,16 +337,10 @@ class RBI
   end
 
   class Param < Symbol
+    extend T::Helpers
     extend T::Sig
 
-    sig { returns(T::Boolean) }
-    attr_reader :is_keyword
-
-    sig { returns(T::Boolean) }
-    attr_reader :is_rest
-
-    sig { returns(T.nilable(String)) }
-    attr_reader :value
+    abstract!
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -354,20 +348,44 @@ class RBI
     sig do
       params(
         name: String,
-        is_keyword: T::Boolean,
-        is_rest: T::Boolean,
+        type: T.nilable(String)
+      ).void
+    end
+    def initialize(name, type: nil)
+      super(name)
+      @type = type
+    end
+  end
+
+  class ParamWithValue < Param
+    extend T::Helpers
+    extend T::Sig
+
+    abstract!
+
+    sig { returns(T.nilable(String)) }
+    attr_reader :value
+
+    sig do
+      params(
+        name: String,
         value: T.nilable(String),
         type: T.nilable(String)
       ).void
     end
-    def initialize(name, is_keyword: false, is_rest: false, value: nil, type: nil)
-      super(name)
-      @is_keyword = is_keyword
-      @is_rest = is_rest
+    def initialize(name, value: nil, type: nil)
+      super(name, type: type)
       @value = value
-      @type = type
     end
   end
+
+  class Arg < Param; end
+  class OptArg < ParamWithValue; end
+  class RestArg < Param; end
+  class KwArg < Param; end
+  class KwOptArg < ParamWithValue; end
+  class KwRestArg < Param; end
+  class BlockArg < Param; end
 
   class Include < Call
     extend T::Sig
@@ -417,9 +435,24 @@ class RBI
   end
 
   class Public < Visibility
+    sig { void }
+    def initialize
+      super(:public)
+    end
+  end
+
+  class Protected < Visibility
+    sig { void }
+    def initialize
+      super(:protected)
+    end
   end
 
   class Private < Visibility
+    sig { void }
+    def initialize
+      super(:private)
+    end
   end
 
   class Sig

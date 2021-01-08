@@ -32,7 +32,6 @@ class RBI
       @root = root
       @scopes_stack = T.let([root], T::Array[Scope])
       @current_scope = T.let(root, Scope)
-      @last_sig = T.let(nil, T.nilable(Sig))
     end
 
     sig { params(node: T.nilable(Object)).void }
@@ -47,7 +46,7 @@ class RBI
       when :def
         visit_def(node)
       when :defs
-        visit_defs(node)
+        visit_def(node)
       when :casgn
         visit_const_assign(node)
       when :send
@@ -116,16 +115,23 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_def(node)
-      name = node.children.first
-      params = visit_params(node.children[1].children)
-      @current_scope << Method.new(name.to_s, is_singleton: false, params: params)
-    end
-
-    sig { params(node: AST::Node).void }
-    def visit_defs(node)
-      name = node.children[1]
-      params = visit_params(node.children[2].children)
-      @current_scope << Method.new(name.to_s, is_singleton: true, params: params)
+      method = case node.type
+      when :def
+        Method.new(
+          node.children[0].to_s,
+          is_singleton: false,
+          params: visit_params(node.children[1].children),
+        )
+      when :defs
+        Method.new(
+          node.children[1].to_s,
+          is_singleton: true,
+          params: visit_params(node.children[2].children),
+        )
+      else
+        raise "Unkown method type"
+      end
+      @current_scope << method
     end
 
     sig { params(nodes: T.nilable(T::Array[AST::Node])).returns(T::Array[Param]) }
@@ -138,20 +144,19 @@ class RBI
     def visit_param(node)
       case node.type
       when :arg
-        Param.new(node.children.first.to_s)
-      when :restarg
-        Param.new(node.children.first.to_s, is_rest: true)
+        Arg.new(node.children.first.to_s)
       when :optarg
-        Param.new(node.children.first.to_s, value: node.children[1].children.first.to_s)
-      when :blockarg
-        # TODO
-        Param.new(node.children.first.to_s)
+        OptArg.new(node.children.first.to_s, value: node.children[1].children.first.to_s)
+      when :restarg
+        RestArg.new(node.children.first.to_s)
       when :kwarg
-        Param.new(node.children.first.to_s, is_keyword: true)
+        KwArg.new(node.children.first.to_s)
       when :kwoptarg
-        Param.new(node.children.first.to_s, is_keyword: true, value: node.children[1].children.first.to_s)
+        KwOptArg.new(node.children.first.to_s, value: node.children[1].children.first.to_s)
       when :kwrestarg
-        Param.new(node.children.first.to_s, is_keyword: true, is_rest: true)
+        KwRestArg.new(node.children.first.to_s)
+      when :blockarg
+        BlockArg.new(node.children.first.to_s)
       else
         raise "Unkown arg type #{node.type}"
       end
@@ -159,16 +164,25 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_send(node)
-      case node.children[1]
+      kind = node.children[1]
+      if kind == :sig
+        visit_sig(node)
+        return
+      end
+
+      case kind
       when :attr_reader
         symbols = node.children[2..-1].map { |child| child.children.first }
-        @current_scope << AttrReader.new(*symbols)
+        attr = AttrReader.new(*symbols)
+        @current_scope << attr
       when :attr_writer
         symbols = node.children[2..-1].map { |child| child.children.first }
-        @current_scope << AttrWriter.new(*symbols)
+        attr = AttrWriter.new(*symbols)
+        @current_scope << attr
       when :attr_accessor
         symbols = node.children[2..-1].map { |child| child.children.first }
-        @current_scope << AttrAccessor.new(*symbols)
+        attr = AttrAccessor.new(*symbols)
+        @current_scope << attr
       when :include
         names = node.children[2..-1].map { |child| visit_name(child) }
         @current_scope << Include.new(*names)
@@ -187,15 +201,18 @@ class RBI
       when :mixes_in_class_methods
         names = node.children[2..-1].map { |child| visit_name(child) }
         @current_scope << MixesInClassMethods.new(*names)
-      when :sig
-        visit_sig(node)
+      when :public
+        @current_scope << Public.new
+      when :protected
+        @current_scope << Protected.new
+      when :private
+        @current_scope << Private.new
       end
     end
 
     sig { params(_node: AST::Node).void }
     def visit_sig(_node)
-      raise "Already in a sig" if @last_sig
-      @last_sig = Sig.new # TODO: parse sig
+      @current_scope << Sig.new # TODO: parse sig
     end
 
     # Utils

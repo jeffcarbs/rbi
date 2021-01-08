@@ -98,8 +98,8 @@ class RBI
       rbi << AttrReader.new(:foo)
       rbi << AttrAccessor.new(:foo)
       rbi << Method.new("foo")
-      rbi << Method.new("foo", params: [Param.new("a")])
-      rbi << Method.new("foo", params: [Param.new("a"), Param.new("b"), Param.new("c")])
+      rbi << Method.new("foo", params: [Arg.new("a")])
+      rbi << Method.new("foo", params: [Arg.new("a"), Arg.new("b"), Arg.new("c")])
       rbi << Include.new("Foo")
       rbi << Extend.new("Foo")
       rbi << Prepend.new("Foo")
@@ -126,12 +126,12 @@ class RBI
       foo << AttrReader.new(:foo)
       foo << AttrAccessor.new(:foo)
       foo << Method.new("foo")
-      foo << Method.new("foo", params: [Param.new("a")])
+      foo << Method.new("foo", params: [Arg.new("a")])
       foo << Method.new("foo", params: [
-        Param.new("a"),
-        Param.new("b", value: "_"),
-        Param.new("c", is_keyword: true),
-        Param.new("d", is_keyword: true, value: "_"),
+        Arg.new("a"),
+        OptArg.new("b", value: "_"),
+        KwArg.new("c"),
+        KwOptArg.new("d", value: "_"),
       ])
       foo << Include.new("Foo")
       foo << Extend.new("Foo")
@@ -182,13 +182,13 @@ class RBI
       rbi = RBI.new
       rbi << Method.new("foo")
       rbi << Method.new("foo", return_type: "String")
-      rbi << Method.new("foo", params: [Param.new("a", type: "String")])
-      rbi << Method.new("foo", params: [Param.new("a", type: "String")], return_type: "Integer")
+      rbi << Method.new("foo", params: [Arg.new("a", type: "String")])
+      rbi << Method.new("foo", params: [Arg.new("a", type: "String")], return_type: "Integer")
       rbi << Method.new("foo", params: [
-        Param.new("a", type: "String"),
-        Param.new("b", value: "_", type: "String"),
-        Param.new("c", is_keyword: true, type: "String"),
-        Param.new("d", is_keyword: true, value: "_", type: "String"),
+        Arg.new("a", type: "String"),
+        OptArg.new("b", value: "_", type: "String"),
+        KwArg.new("c", type: "String"),
+        KwOptArg.new("d", value: "_", type: "String"),
       ])
 
       assert_equal(<<~RBI, rbi.to_rbi)
