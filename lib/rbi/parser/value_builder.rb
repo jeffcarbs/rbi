@@ -2,19 +2,19 @@
 # frozen_string_literal: true
 
 class RBI
-  class ValueBuilder
+  class ExpBuilder
     extend T::Sig
 
     sig { params(string: String).returns(T.nilable(String)) }
-    def self.parse_string(string)
+    def self.parse(string)
       node = Parser.parse_string(string)
       return nil unless node
-      parse_node(node)
+      build(node)
     end
 
     sig { params(node: AST::Node).returns(T.nilable(String)) }
-    def self.parse_node(node)
-      v = ValueBuilder.new
+    def self.build(node)
+      v = ExpBuilder.new
       v.visit(node)
       out = v.out.string
       return nil if out.empty?
@@ -34,8 +34,6 @@ class RBI
       return unless node
       puts node.type
       case node.type
-      when :str
-        @out << "\"#{node.children.map(&:to_s).join(', ')}\""
       when :send
         if node.children[0]
           visit(node.children[0])
@@ -65,6 +63,8 @@ class RBI
           visit(child)
         end
         @out << "]"
+      when :str
+        @out << "\"#{node.children[0].to_s}\""
       when :int
         @out << node.children[0]
       when :nil

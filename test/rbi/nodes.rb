@@ -201,9 +201,22 @@ class RBI
     def initialize(name, type:, default: nil)
       args = []
       args << ":#{name}"
-      args << "typed: #{type}"
+      args << type
       args << "default: #{default}" if default
       super(:prop, args)
+    end
+  end
+
+  class TConst < Call
+    extend T::Sig
+
+    sig { params(name: String, type: String, default: T.nilable(String)).void }
+    def initialize(name, type:, default: nil)
+      args = []
+      args << ":#{name}"
+      args << type
+      args << "default: #{default}" if default
+      super(:const, args)
     end
   end
 

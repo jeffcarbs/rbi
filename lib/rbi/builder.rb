@@ -70,8 +70,12 @@ class RBI
       scope = if node.type == :module
         Module.new(name)
       elsif node.type == :class
-        superclass = NameBuilder.parse_node(node.children[1]) if node.children[1]
-        Class.new(name, superclass: superclass)
+        superclass = ExpBuilder.build(node.children[1]) if node.children[1]
+        if superclass == "T::Struct"
+          TStruct.new(name)
+        else
+          Class.new(name, superclass: superclass)
+        end
       else
         raise "Unsupported node #{node.type}"
       end
@@ -91,7 +95,7 @@ class RBI
     def visit_const_assign(node)
       @current_scope << Const.new(
         NameBuilder.parse_node(node),
-        value: ValueBuilder.parse_node(node.children[2])
+        value: ExpBuilder.build(node.children[2])
       )
     end
 
@@ -112,13 +116,13 @@ class RBI
       when :arg
         Arg.new(node.children[0].to_s)
       when :optarg
-        OptArg.new(node.children[0].to_s, value: ValueBuilder.parse_node(node.children[1]))
+        OptArg.new(node.children[0].to_s, value: ExpBuilder.build(node.children[1]))
       when :restarg
         RestArg.new(node.children[0].to_s)
       when :kwarg
         KwArg.new(node.children[0].to_s)
       when :kwoptarg
-        KwOptArg.new(node.children[0].to_s, value: ValueBuilder.parse_node(node.children[1]))
+        KwOptArg.new(node.children[0].to_s, value: ExpBuilder.build(node.children[1]))
       when :kwrestarg
         KwRestArg.new(node.children[0].to_s)
       when :blockarg
@@ -168,6 +172,12 @@ class RBI
         @current_scope << Protected.new
       when :private
         @current_scope << Private.new
+      when :prop
+        type = ExpBuilder.build(node.children[3])
+        @current_scope << TProp.new(node.children[2].children[0].to_s, type: type)
+      when :const
+        type = ExpBuilder.build(node.children[3])
+        @current_scope << TConst.new(node.children[2].children[0].to_s, type: type, default: "")
       else
         raise "Unsupported call type #{method_name}"
       end
@@ -175,62 +185,9 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_sig(node)
-      return unless node.children[0]&.children[1] == :sig
-      v = SigVisitor.new
-      v.visit(node.children[2])
-      @current_scope << v.ssig
-    end
-  end
-
-  # TODO visitor abstract
-
-  class SigVisitor
-    extend T::Sig
-
-    sig { returns(Sig) }
-    attr_accessor :ssig
-
-    sig { void }
-    def initialize
-      @ssig = T.let(Sig.new, Sig)
-    end
-
-    sig { params(nodes: T::Array[AST::Node]).void }
-    def visit_all(nodes)
-      nodes.each { |node| visit(node) }
-    end
-
-    sig { params(node: T.nilable(Object)).void }
-    def visit(node)
-      if node.is_a?(AST::Node)
-        case node.type
-        when :send
-          visit_send(node)
-        end
-      end
-    end
-
-    def visit_send(node)
-      name = node.children[1]
-      # puts name
-      case name
-      when :void
-        ssig.returns = "void"
-      # puts node
-      # puts "----"
-        visit_all(node.children)
-      when :returns
-        ssig.returns = ValueBuilder.parse_node(node.children[2])
-      # puts node
-      # puts "----"
-        visit_all(node.children)
-      when :params
-        ssig.params << Arg.new("P")
-        visit_all(node.children)
-      when :abstract
-        ssig.is_abstract = true
-        visit_all(node.children)
-      end
+      sig = Sig.from_node(node)
+      return nil unless sig
+      @current_scope << sig
     end
   end
 end

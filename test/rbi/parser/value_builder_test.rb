@@ -4,12 +4,12 @@
 require "test_helper"
 
 class RBI
-  class ValueBuilderTest < Minitest::Test
+  class ExpBuilderTest < Minitest::Test
     extend T::Sig
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_name(string)
-      ValueBuilder.parse_string(string)
+      ExpBuilder.parse(string)
     end
 
     sig { params(exp: String, string: String).void }
