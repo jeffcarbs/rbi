@@ -1,4 +1,4 @@
- # typed: true
+ # typed: strict
 # frozen_string_literal: true
 
 class RBI
@@ -10,6 +10,9 @@ class RBI
       node = Parser.parse_string(string)
       return nil unless node
       parse_node(node)
+    rescue ::Parser::SyntaxError => e
+      puts e
+      nil
     end
 
     sig { params(node: AST::Node).returns(T.nilable(String)) }
@@ -28,25 +31,18 @@ class RBI
       @names = T.let([], T::Array[String])
     end
 
-    sig { params(nodes: T::Array[AST::Node]).void }
-    def visit_all(nodes)
-      nodes.each { |node| visit(node) }
-    end
-
-    sig { params(node: T.nilable(Object)).void }
+    sig { params(node: T.nilable(AST::Node)).void }
     def visit(node)
-      if node.is_a?(::Symbol)
-        names << node.to_s
-      elsif node.is_a?(::Parser::AST::Node)
-        visit_all(node.children)
-        names << "" if node.type == :cbase
+      return unless node
+      case node.type
+      when :const, :send
+        visit(node.children[0])
+        @names << node.children[1].to_s
+      when :index
+        visit(node.children[0])
+      when :cbase
+        names << ""
       end
-      # case node.type
-      # when :const
-      # names << node.location.name.source
-      # when :cbase
-      # names << "::"
-      # end
     end
   end
 end
