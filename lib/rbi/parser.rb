@@ -1,8 +1,6 @@
 # typed: strict
 # frozen_string_literal: true
 
-require 'parser/current'
-
 class RBI
   class Parser
     extend T::Sig

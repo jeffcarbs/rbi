@@ -144,8 +144,10 @@ class RBI
     def test_parse_consts
       rbi = <<~RBI
         CONST2 = CONST1
+        ::CONST2 = CONST1
         C::C::C = C::C::C
         C::C = foo
+        ::C::C = foo
       RBI
       assert_parse_identical(rbi)
     end

@@ -1,4 +1,4 @@
-# typed: strict
+# typed: true
 # frozen_string_literal: true
 
 class RBI
@@ -39,18 +39,16 @@ class RBI
       return unless node.is_a?(AST::Node)
 
       case node.type
-      when :module
-        visit_module(node)
-      when :class
-        visit_class(node)
-      when :def
-        visit_def(node)
-      when :defs
+      when :module, :class
+        visit_scope(node)
+      when :def, :defs
         visit_def(node)
       when :casgn
         visit_const_assign(node)
       when :send
         visit_send(node)
+      when :block
+        visit_sig(node)
       else
         visit_all(node.children)
       end
@@ -65,98 +63,66 @@ class RBI
 
     # Scopes
 
-    sig { params(scope: Scope).void }
-    def enter_scope(scope)
+    sig { params(node: AST::Node).void }
+    def visit_scope(node)
+      name = visit_name(node.children[0])
+
+      scope = if node.type == :module
+        Module.new(name)
+      elsif node.type == :class
+        superclass = visit_name(node.children[1]) if node.children[1]
+        Class.new(name, superclass: superclass)
+      else
+        raise "Unsupported node #{node.type}"
+      end
+
       @scopes_stack << scope
       @current_scope << scope
       @current_scope = scope
-    end
-
-    sig { params(scope: Scope).void }
-    def exit_scope(scope)
+      visit_all(node.children)
       raise "Not the current scope" unless scope == @current_scope
       @scopes_stack.pop
       @current_scope = T.must(@scopes_stack.last)
-    end
-
-    sig { params(node: AST::Node).void }
-    def visit_module(node)
-      name = visit_name(node.children.first)
-      mod = Module.new(name)
-
-      enter_scope(mod)
-      visit_all(node.children)
-      exit_scope(mod)
-    end
-
-    sig { params(node: AST::Node).void }
-    def visit_class(node)
-      name = visit_name(node.children.first)
-      superclass = visit_name(node.children[1]) if node.children[1]
-      klass = Class.new(name, superclass: superclass)
-
-      enter_scope(klass)
-      visit_all(node.children)
-      exit_scope(klass)
     end
 
     # Properties
 
     sig { params(node: AST::Node).void }
     def visit_const_assign(node)
-      name = if node.children[0]
-        visit_name(node.children[0])
-      else
-        node.children[1].to_s
-      end
-      # TODO: parse value
-      @current_scope << Const.new(name)
+      @current_scope << Const.new(
+        visit_names(node.children[0...-1]),
+        value: visit_value(node.children.last)
+      )
     end
 
     sig { params(node: AST::Node).void }
     def visit_def(node)
-      method = case node.type
-      when :def
-        Method.new(
-          node.children[0].to_s,
-          is_singleton: false,
-          params: visit_params(node.children[1].children),
-        )
-      when :defs
-        Method.new(
-          node.children[1].to_s,
-          is_singleton: true,
-          params: visit_params(node.children[2].children),
-        )
-      else
-        raise "Unkown method type"
-      end
-      @current_scope << method
-    end
-
-    sig { params(nodes: T.nilable(T::Array[AST::Node])).returns(T::Array[Param]) }
-    def visit_params(nodes)
-      return [] unless nodes
-      nodes.map { |node| visit_param(node) }
+      is_singleton = node.type == :defs
+      params = node.children[is_singleton ? 2 : 1].children.map { |node| visit_param(node) }
+      @current_scope << Method.new(
+        node.children[is_singleton ? 1 : 0].to_s,
+        is_singleton: is_singleton,
+        params: params,
+      )
     end
 
     sig { params(node: AST::Node).returns(Param) }
     def visit_param(node)
       case node.type
       when :arg
-        Arg.new(node.children.first.to_s)
+        Arg.new(node.children[0].to_s)
       when :optarg
-        OptArg.new(node.children.first.to_s, value: node.children[1].children.first.to_s)
+        OptArg.new(node.children[0].to_s, value: visit_value(node.children[1]))
       when :restarg
-        RestArg.new(node.children.first.to_s)
+        RestArg.new(node.children[0].to_s)
       when :kwarg
-        KwArg.new(node.children.first.to_s)
+        KwArg.new(node.children[0].to_s)
       when :kwoptarg
-        KwOptArg.new(node.children.first.to_s, value: node.children[1].children.first.to_s)
+        KwOptArg.new(node.children[0].to_s, value: visit_value(node.children[1]))
       when :kwrestarg
-        KwRestArg.new(node.children.first.to_s)
+        KwRestArg.new(node.children[0].to_s)
       when :blockarg
-        BlockArg.new(node.children.first.to_s)
+        BlockArg.new(node.children[0].to_s)
       else
         raise "Unkown arg type #{node.type}"
       end
@@ -164,23 +130,18 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_send(node)
-      kind = node.children[1]
-      if kind == :sig
-        visit_sig(node)
-        return
-      end
-
-      case kind
+      method_name = node.children[1]
+      case method_name
       when :attr_reader
-        symbols = node.children[2..-1].map { |child| child.children.first }
+        symbols = node.children[2..-1].map { |child| child.children[0] }
         attr = AttrReader.new(*symbols)
         @current_scope << attr
       when :attr_writer
-        symbols = node.children[2..-1].map { |child| child.children.first }
+        symbols = node.children[2..-1].map { |child| child.children[0] }
         attr = AttrWriter.new(*symbols)
         @current_scope << attr
       when :attr_accessor
-        symbols = node.children[2..-1].map { |child| child.children.first }
+        symbols = node.children[2..-1].map { |child| child.children[0] }
         attr = AttrAccessor.new(*symbols)
         @current_scope << attr
       when :include
@@ -207,40 +168,103 @@ class RBI
         @current_scope << Protected.new
       when :private
         @current_scope << Private.new
+      else
+        raise "Unsupported call type #{method_name}"
       end
     end
 
-    sig { params(_node: AST::Node).void }
-    def visit_sig(_node)
-      @current_scope << Sig.new # TODO: parse sig
+    sig { params(node: AST::Node).void }
+    def visit_sig(node)
+      return unless node.children[0]&.children[1] == :sig
+      v = SigVisitor.new
+      v.visit(node.children[2])
+      @current_scope << v.ssig
     end
 
     # Utils
 
     sig { params(node: AST::Node).returns(String) }
     def visit_name(node)
-      v = ScopeNameVisitor.new
+      v = NameBuilder.new
       v.visit(node)
       v.names.join("::")
     end
+
+    sig { params(nodes: T::Array[AST::Node]).returns(String) }
+    def visit_names(nodes)
+      v = NameBuilder.new
+      v.visit_all(nodes)
+      v.names.join("::")
+    end
+
+    sig { params(node: AST::Node).returns(String) }
+    def visit_value(node)
+      case node.type
+      when :str
+        "\"#{node.children.map(&:to_s).join(', ')}\""
+      when :const
+        visit_name(node)
+      when :send
+        if node.children[0]
+          "#{node.children[0]}.#{node.children[1]}"
+        else
+          node.children[1].to_s
+        end
+      else
+        raise "Unsupported value type #{node.type}"
+      end
+    end
   end
 
-  class ScopeNameVisitor
+  # TODO visitor abstract
+
+  class SigVisitor
     extend T::Sig
 
-    sig { returns(T::Array[String]) }
-    attr_accessor :names
+    sig { returns(Sig) }
+    attr_accessor :ssig
 
     sig { void }
     def initialize
-      @names = T.let([], T::Array[String])
+      @ssig = T.let(Sig.new, Sig)
+    end
+
+    sig { params(nodes: T::Array[AST::Node]).void }
+    def visit_all(nodes)
+      nodes.each { |node| visit(node) }
     end
 
     sig { params(node: T.nilable(Object)).void }
     def visit(node)
-      return unless node.is_a?(::Parser::AST::Node)
-      node.children.each { |child| visit(child) }
-      names << node.location.name.source if node.type == :const
+      if node.is_a?(AST::Node)
+        case node.type
+        when :send
+          visit_send(node)
+        end
+      end
+    end
+
+    def visit_send(node)
+      name = node.children[1]
+      # puts name
+      case name
+      when :void
+        ssig.returns = "void"
+      puts node
+      puts "----"
+        visit_all(node.children)
+      when :returns
+        ssig.returns = node.children[2].to_s
+      puts node
+      puts "----"
+        visit_all(node.children)
+      when :params
+        ssig.params << Arg.new("P")
+        visit_all(node.children)
+      when :abstract
+        ssig.is_abstract = true
+        visit_all(node.children)
+      end
     end
   end
 end

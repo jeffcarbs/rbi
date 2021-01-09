@@ -3,6 +3,7 @@
 
 class RBI
   extend T::Sig
+
   sig do
     params(
       out: T.any(IO, StringIO),
@@ -18,7 +19,7 @@ class RBI
       out: out,
       default_indent: default_indent,
     )
-    p.visit_all(@root.body)
+    p.visit_all(root.body)
     out.string
   end
 
@@ -83,16 +84,43 @@ class RBI
     sig { params(nodes: T::Array[Node]).void }
     def visit_all(nodes)
       previous = T.let(nil, T.nilable(Node))
+      pprevious = T.let(nil, T.nilable(Node))
       nodes.each_with_index do |node, _index|
-        printn if previous && (previous.new_line_after?(self) || node.new_line_before?(self))
+        printn if previous && ((previous.new_line_after?(self) || node.new_line_before?(self)) ||
+                               (previous.is_a?(Method) && pprevious.is_a?(Sig)))
         visit(node)
+        pprevious = previous
         previous = node
       end
     end
   end
 
+  module Printable
+    extend T::Sig
+
+    sig do
+      params(
+        out: T.any(IO, StringIO),
+        default_indent: Integer,
+      ).returns(String)
+    end
+    def to_rbi(
+      out: $stdout,
+      default_indent: 0
+    )
+      out = StringIO.new
+      p = Printer.new(
+        out: out,
+        default_indent: default_indent,
+      )
+      p.visit(T.cast(self, Node))
+      out.string
+    end
+  end
+
   module Node
     extend T::Sig
+    include Printable
 
     sig { abstract.params(v: Printer).void }
     def accept_printer(v); end
@@ -277,7 +305,6 @@ class RBI
     def accept_printer(v)
       v.print(name.to_s)
     end
-
   end
 
   class OptArg
@@ -285,7 +312,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("#{name.to_s} = #{value}")
+      v.print("#{name} = #{value}")
     end
   end
 
@@ -294,7 +321,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("*#{name.to_s}")
+      v.print("*#{name}")
     end
   end
 
@@ -303,7 +330,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("#{name.to_s}:")
+      v.print("#{name}:")
     end
   end
 
@@ -312,7 +339,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("#{name.to_s}: #{value}")
+      v.print("#{name}: #{value}")
     end
   end
 
@@ -321,7 +348,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("**#{name.to_s}")
+      v.print("**#{name}")
     end
   end
 
@@ -330,15 +357,15 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.print("&#{name.to_s}")
+      v.print("&#{name}")
     end
   end
 
   class Visibility
     extend T::Sig
 
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def new_line_before?(v)
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_before?(_v)
       true
     end
 
@@ -352,6 +379,7 @@ class RBI
 
   class Sig
     extend T::Sig
+    include Printable
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
