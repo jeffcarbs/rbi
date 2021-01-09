@@ -65,12 +65,12 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_scope(node)
-      name = visit_name(node.children[0])
+      name = NameBuilder.parse_node(node.children[0])
 
       scope = if node.type == :module
         Module.new(name)
       elsif node.type == :class
-        superclass = visit_name(node.children[1]) if node.children[1]
+        superclass = NameBuilder.parse_node(node.children[1]) if node.children[1]
         Class.new(name, superclass: superclass)
       else
         raise "Unsupported node #{node.type}"
@@ -90,8 +90,8 @@ class RBI
     sig { params(node: AST::Node).void }
     def visit_const_assign(node)
       @current_scope << Const.new(
-        visit_names(node.children[0...-1]),
-        value: visit_value(node.children.last)
+        NameBuilder.parse_node(node),
+        value: ValueBuilder.parse_node(node.children[2])
       )
     end
 
@@ -112,13 +112,13 @@ class RBI
       when :arg
         Arg.new(node.children[0].to_s)
       when :optarg
-        OptArg.new(node.children[0].to_s, value: visit_value(node.children[1]))
+        OptArg.new(node.children[0].to_s, value: ValueBuilder.parse_node(node.children[1]))
       when :restarg
         RestArg.new(node.children[0].to_s)
       when :kwarg
         KwArg.new(node.children[0].to_s)
       when :kwoptarg
-        KwOptArg.new(node.children[0].to_s, value: visit_value(node.children[1]))
+        KwOptArg.new(node.children[0].to_s, value: ValueBuilder.parse_node(node.children[1]))
       when :kwrestarg
         KwRestArg.new(node.children[0].to_s)
       when :blockarg
@@ -145,13 +145,13 @@ class RBI
         attr = AttrAccessor.new(*symbols)
         @current_scope << attr
       when :include
-        names = node.children[2..-1].map { |child| visit_name(child) }
+        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
         @current_scope << Include.new(*names)
       when :extend
-        names = node.children[2..-1].map { |child| visit_name(child) }
+        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
         @current_scope << Extend.new(*names)
       when :prepend
-        names = node.children[2..-1].map { |child| visit_name(child) }
+        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
         @current_scope << Prepend.new(*names)
       when :abstract!
         @current_scope << Abstract.new
@@ -160,7 +160,7 @@ class RBI
       when :interface!
         @current_scope << Interface.new
       when :mixes_in_class_methods
-        names = node.children[2..-1].map { |child| visit_name(child) }
+        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
         @current_scope << MixesInClassMethods.new(*names)
       when :public
         @current_scope << Public.new
@@ -179,40 +179,6 @@ class RBI
       v = SigVisitor.new
       v.visit(node.children[2])
       @current_scope << v.ssig
-    end
-
-    # Utils
-
-    sig { params(node: AST::Node).returns(String) }
-    def visit_name(node)
-      v = NameBuilder.new
-      v.visit(node)
-      v.names.join("::")
-    end
-
-    sig { params(nodes: T::Array[AST::Node]).returns(String) }
-    def visit_names(nodes)
-      v = NameBuilder.new
-      v.visit_all(nodes)
-      v.names.join("::")
-    end
-
-    sig { params(node: AST::Node).returns(String) }
-    def visit_value(node)
-      case node.type
-      when :str
-        "\"#{node.children.map(&:to_s).join(', ')}\""
-      when :const
-        visit_name(node)
-      when :send
-        if node.children[0]
-          "#{node.children[0]}.#{node.children[1]}"
-        else
-          node.children[1].to_s
-        end
-      else
-        raise "Unsupported value type #{node.type}"
-      end
     end
   end
 
@@ -250,13 +216,13 @@ class RBI
       case name
       when :void
         ssig.returns = "void"
-      puts node
-      puts "----"
+      # puts node
+      # puts "----"
         visit_all(node.children)
       when :returns
-        ssig.returns = node.children[2].to_s
-      puts node
-      puts "----"
+        ssig.returns = ValueBuilder.parse_node(node.children[2])
+      # puts node
+      # puts "----"
         visit_all(node.children)
       when :params
         ssig.params << Arg.new("P")

@@ -18,6 +18,7 @@ require 'rbi/parser'
 # require 'rbi/ast'
 require 'rbi/sig_builder'
 require 'rbi/parser/name_builder'
+require 'rbi/parser/value_builder'
 require 'rbi/builder'
 
 require 'rbi/version'

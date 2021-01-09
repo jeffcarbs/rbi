@@ -10,9 +10,6 @@ class RBI
       node = Parser.parse_string(string)
       return nil unless node
       parse_node(node)
-    rescue ::Parser::SyntaxError => e
-      puts e
-      nil
     end
 
     sig { params(node: AST::Node).returns(T.nilable(String)) }
@@ -35,7 +32,7 @@ class RBI
     def visit(node)
       return unless node
       case node.type
-      when :const, :send
+      when :const, :casgn, :send
         visit(node.children[0])
         @names << node.children[1].to_s
       when :index

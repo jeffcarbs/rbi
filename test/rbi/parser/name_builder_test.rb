@@ -75,5 +75,12 @@ class RBI
       assert_identical("::Foo::foo")
       assert_parse("::Foo::foo::bar", "::Foo::foo.bar")
     end
+
+    def test_parse_consts
+      assert_parse("F", "F = 10")
+      assert_parse("FOO", "FOO = FOO")
+      assert_parse("F::F::F", "F::F::F = FOO")
+      assert_parse("::Foo", "::Foo = FOO")
+    end
   end
 end
