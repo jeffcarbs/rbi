@@ -10,16 +10,16 @@ class RBI
 
     def test_scope_nested
       rbi = RBI.new
-      m = Module.new("M")
+      m0 = Module.new("M0")
       m1 = Module.new("M1")
       m1 << Module.new("M11")
       m1 << Module.new("M12")
-      m << m1
-      m << Module.new("M2")
-      rbi << m
+      m0 << m1
+      m0 << Module.new("M2")
+      rbi << m0
 
       assert_equal(<<~RBI, rbi.to_rbi)
-        module M
+        module M0
           module M1
             module M11; end
             module M12; end
