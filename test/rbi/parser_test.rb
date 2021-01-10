@@ -392,7 +392,7 @@ class RBI
     end
 
     def test_parse_empty_sig
-      assert_parse_identical("sig {  }\n")
+      assert_parse_identical("sig {}\n")
     end
   end
 end

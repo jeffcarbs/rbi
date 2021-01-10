@@ -7,9 +7,10 @@ class RBI
   sig { returns(Module) }
   attr_reader :root
 
-  sig { void }
-  def initialize
+  sig { params(block: T.nilable(T.proc.params(scope: RBI).void)).void }
+  def initialize(&block)
     @root = T.let(Module.new("<root>"), Module)
+    block&.call(self)
   end
 
   sig { params(node: InScope).void }
@@ -99,10 +100,11 @@ class RBI
   class Module < Scope
     extend T::Sig
 
-    sig { params(name: String, interface: T::Boolean).void }
-    def initialize(name, interface: false)
+    sig { params(name: String, interface: T::Boolean, block: T.nilable(T.proc.params(scope: Module).void)).void }
+    def initialize(name, interface: false, &block)
       super(name)
       interface! if interface
+      block&.call(self)
     end
 
     sig { void }
@@ -134,14 +136,16 @@ class RBI
         name: String,
         abstract: T::Boolean,
         sealed: T::Boolean,
-        superclass: T.nilable(String)
+        superclass: T.nilable(String),
+        block: T.nilable(T.proc.params(scope: Class).void),
       ).void
     end
-    def initialize(name, abstract: false, sealed: false, superclass: nil)
+    def initialize(name, abstract: false, sealed: false, superclass: nil, &block)
       super(name)
       abstract! if abstract
       sealed! if sealed
       @superclass = superclass
+      block&.call(self)
     end
 
     sig { void }

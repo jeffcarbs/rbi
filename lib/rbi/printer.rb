@@ -19,7 +19,7 @@ class RBI
       out: out,
       default_indent: default_indent,
     )
-    p.visit_all(root.body)
+    p.visit_body(root.body)
     out.string
   end
 
@@ -83,15 +83,41 @@ class RBI
 
     sig { params(nodes: T::Array[Node]).void }
     def visit_all(nodes)
-      previous = T.let(nil, T.nilable(Node))
-      pprevious = T.let(nil, T.nilable(Node))
+      nodes.each { |node| visit(node) }
+    end
+
+    sig { params(nodes: T::Array[Node]).void }
+    def visit_body(nodes)
+      previous = T::Array[Node].new
       nodes.each_with_index do |node, _index|
-        printn if previous && ((previous.new_line_after?(self) || node.new_line_before?(self)) ||
-                               (previous.is_a?(Method) && pprevious.is_a?(Sig)))
+        printn if blank_before?(node, previous)
         visit(node)
-        pprevious = previous
-        previous = node
+        previous << node
       end
+    end
+
+    sig { params(node: Node).returns(T::Boolean) }
+    def oneline?(node)
+      return false if node.is_a?(Scope) && !node.body.empty?
+      true
+    end
+
+    sig { params(node: Node, previous: T::Array[Node]).returns(T::Boolean) }
+    def blank_before?(node, previous)
+      last = previous[-1]
+      return false unless last
+      return true unless oneline?(node)
+      return true unless oneline?(last) && oneline?(node)
+      return true if node.is_a?(Attr) && !node.sigs.empty?
+      return true if node.is_a?(Method) && !node.sigs.empty?
+      return true if node.is_a?(Sig) && !last.is_a?(Sig)
+      # return true if !node.is_a?(Sig) && last
+      return true if !last.is_a?(Sig) && (
+        (previous[-2]&.is_a?(Method) && !previous[-2].sigs.empty?) ||
+        (previous[-2]&.is_a?(Attr) && !previous[-2].sigs.empty?) ||
+        previous[-2]&.is_a?(Sig)
+      )
+      false
     end
   end
 
@@ -124,34 +150,6 @@ class RBI
 
     sig { abstract.params(v: Printer).void }
     def accept_printer(v); end
-
-    sig { abstract.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v); end
-
-    sig { abstract.params(_v: Printer).returns(T::Boolean) }
-    def new_line_before?(_v); end
-
-    sig { abstract.params(_v: Printer).returns(T::Boolean) }
-    def new_line_after?(_v); end
-  end
-
-  class Symbol
-    extend T::Sig
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      true
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def new_line_before?(v)
-      !oneline?(v)
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def new_line_after?(v)
-      !oneline?(v)
-    end
   end
 
   class Scope
@@ -159,20 +157,15 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      if oneline?(v)
+      if body.empty?
         v.printn("; end")
         return
       end
       v.printn
       v.indent
-      v.visit_all(body)
+      v.visit_body(body)
       v.dedent
       v.printl("end")
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      body.empty?
     end
   end
 
@@ -188,21 +181,6 @@ class RBI
       end
       v.printn
     end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      true
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def new_line_before?(v)
-      !oneline?(v)
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def new_line_after?(v)
-      !oneline?(v)
-    end
   end
 
   class Module
@@ -212,11 +190,6 @@ class RBI
     def accept_printer(v)
       v.printt("module #{name}")
       super(v)
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def oneline?(v)
-      !interface? && super(v)
     end
   end
 
@@ -230,11 +203,6 @@ class RBI
         v.print(" < #{superclass}")
       end
       super(v)
-    end
-
-    sig { override.params(v: Printer).returns(T::Boolean) }
-    def oneline?(v)
-      !abstract? && !sealed? && super(v)
     end
   end
 
@@ -250,11 +218,6 @@ class RBI
         v.print(names.map { |name| ":#{name}" }.join(", "))
       end
       v.printn
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      sigs.empty?
     end
   end
 
@@ -290,11 +253,6 @@ class RBI
         v.print(")")
       end
       v.printn("; end")
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      sigs.empty?
     end
   end
 
@@ -361,20 +319,6 @@ class RBI
     end
   end
 
-  class Visibility
-    extend T::Sig
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_before?(_v)
-      true
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_after?(_v)
-      true
-    end
-  end
-
   # Sorbet
 
   class Sig
@@ -383,51 +327,21 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.printt("sig { ")
-      body.each_with_index do |builder, index|
-        v.print(".") if index > 0
-        v.visit(builder)
+      v.printt("sig {")
+      unless body.empty?
+        v.print(" ")
+        body.each_with_index do |builder, index|
+          v.print(".") if index > 0
+          v.visit(builder)
+        end
+        v.print(" ")
       end
-      v.printn(" }")
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      true
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_before?(_v)
-      true
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_after?(_v)
-      false
+      v.printn("}")
     end
   end
 
   module InSig
     include Printable
-  end
-
-  class InSigPart
-    extend T::Sig
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def oneline?(_v)
-      true
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_before?(_v)
-      true
-    end
-
-    sig { override.params(_v: Printer).returns(T::Boolean) }
-    def new_line_after?(_v)
-      true
-    end
   end
 
   class SAbstract

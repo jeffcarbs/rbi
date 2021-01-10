@@ -9,14 +9,15 @@ class RBI
     # Scope
 
     def test_scope_nested
-      rbi = RBI.new
-      m0 = Module.new("M0")
-      m1 = Module.new("M1")
-      m1 << Module.new("M11")
-      m1 << Module.new("M12")
-      m0 << m1
-      m0 << Module.new("M2")
-      rbi << m0
+      rbi = RBI.new do |m|
+        m << Module.new("M0") do |m0|
+          m0 << Module.new("M1") do |m1|
+            m1 << Module.new("M11")
+            m1 << Module.new("M12")
+          end
+          m0 << Module.new("M2")
+        end
+      end
 
       assert_equal(<<~RBI, rbi.to_rbi)
         module M0
@@ -205,6 +206,27 @@ class RBI
 
         sig { params(a: String, b: String, c: String, d: String).void }
         def foo(a, b = _, c:, d: _); end
+      RBI
+    end
+
+    # Sorbet
+
+    def test_print_sigs
+      rbi = RBI.new
+      rbi << Sig.new
+      rbi << Sig.new
+      rbi << Sig.new
+      rbi << Sig.new
+      rbi << Sig.new
+      rbi << Sig.new
+
+      assert_equal(<<~RBI, rbi.to_rbi)
+        sig {}
+        sig {}
+        sig {}
+        sig {}
+        sig {}
+        sig {}
       RBI
     end
   end
