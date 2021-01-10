@@ -8,6 +8,21 @@ class RBI
     extend T::Sig
     # Scope
 
+    def test_build_fluent
+      rbi = RBI.new
+      rbi.append(Module.new("M0"))
+        .append(Module.new("M1"))
+        .append(Module.new("M11"))
+
+      assert_equal(<<~RBI, rbi.to_rbi)
+        module M0
+          module M1
+            module M11; end
+          end
+        end
+      RBI
+    end
+
     def test_scope_nested
       rbi = RBI.new do |m|
         m << Module.new("M0") do |m0|

@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 class RBI
-
   # Scopes
 
   class Module < Scope
@@ -46,7 +45,7 @@ class RBI
     end
   end
 
-  # TODO remove
+  # TODO: remove
   class TStruct < Class
     extend T::Sig
 
@@ -138,6 +137,7 @@ class RBI
 
     sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String)).void }
     def initialize(is_abstract: false, params: nil, returns: nil)
+      super()
       @body = T.let([], T::Array[T.all(Node, InSig)])
       @body << SAbstract.new if is_abstract
       @body << Params.new(params) if params

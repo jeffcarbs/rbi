@@ -18,6 +18,12 @@ class RBI
     @root << node
   end
 
+  sig { params(node: T.all(Node, InScope)).returns(T.all(Node, InScope)) }
+  def append(node)
+    @root.append(node)
+    node
+  end
+
   class Node
     extend T::Sig
     extend T::Helpers
@@ -48,6 +54,7 @@ class RBI
 
     sig { params(name: String).void }
     def initialize(name)
+      super()
       @name = name
       @body = T.let([], T::Array[T.all(Node, InScope)])
     end
@@ -55,6 +62,12 @@ class RBI
     sig { params(node: T.all(Node, InScope)).void }
     def <<(node)
       @body << node
+    end
+
+    sig { params(node: T.all(Node, InScope)).returns(T.all(Node, InScope)) }
+    def append(node)
+      @body << node
+      node
     end
   end
 
@@ -102,6 +115,7 @@ class RBI
 
     sig { params(name: String, value: T.nilable(String)).void }
     def initialize(name, value: nil)
+      super()
       @name = name
       @value = value
     end
@@ -137,6 +151,7 @@ class RBI
       ).void
     end
     def initialize(name, is_singleton: false, params: [], return_type: nil)
+      super()
       @name = name
       @is_singleton = is_singleton
       @params = params
@@ -172,6 +187,7 @@ class RBI
       ).void
     end
     def initialize(name, type: nil)
+      super()
       @name = name
       @type = type
     end
@@ -230,6 +246,7 @@ class RBI
 
     sig { params(method: ::Symbol, args: T::Array[String]).void }
     def initialize(method, args = [])
+      super()
       @method = method
       @args = args
     end
