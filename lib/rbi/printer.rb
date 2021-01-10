@@ -109,12 +109,16 @@ class RBI
       return false unless last
       return true unless oneline?(node)
       return true unless oneline?(last) && oneline?(node)
+      # return true if node.is_a?(Visibility) || last.is_a?(Visibility)
+      # return true if node.is_a?(Def) && !last.is_a?(Sig) && (!node.is_a?(last.class) && !last.is_a?(node.class))
+      # return true if last.is_a?(Def) && last.name == "initialize"
+      # return true if node.is_a?(Def) && last.is_a?(Def) && last.is_singleton != node.is_singleton
       return true if node.is_a?(Attr) && !node.sigs.empty?
-      return true if node.is_a?(Method) && !node.sigs.empty?
+      return true if node.is_a?(Def) && !node.sigs.empty?
       return true if node.is_a?(Sig) && !last.is_a?(Sig)
       # return true if !node.is_a?(Sig) && last
       return true if !last.is_a?(Sig) && (
-        (before_last&.is_a?(Method) && !before_last.sigs.empty?) ||
+        (before_last&.is_a?(Def) && !before_last.sigs.empty?) ||
         (before_last&.is_a?(Attr) && !before_last.sigs.empty?) ||
         before_last&.is_a?(Sig)
       )
@@ -178,7 +182,9 @@ class RBI
       v.printt(method.to_s)
       unless args.empty?
         v.print(" ")
+        # v.print("(") unless self.is_a?(Attr)
         v.print(args.join(", "))
+        # v.print(")") unless self.is_a?(Attr)
       end
       v.printn
     end
@@ -236,7 +242,7 @@ class RBI
     end
   end
 
-  class Method
+  class Def
     extend T::Sig
 
     sig { override.params(v: Printer).void }

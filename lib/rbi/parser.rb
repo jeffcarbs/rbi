@@ -286,11 +286,7 @@ class RBI
         Module.new(name)
       elsif node.type == :class
         superclass = ExpBuilder.build(node.children[1]) if node.children[1]
-        if superclass == "T::Struct"
-          TStruct.new(name)
-        else
-          Class.new(name, superclass: superclass)
-        end
+        Class.new(name, superclass: superclass)
       else
         raise "Unsupported node #{node.type}"
       end
@@ -318,7 +314,7 @@ class RBI
     def visit_def(node)
       is_singleton = node.type == :defs
       params = node.children[is_singleton ? 2 : 1].children.map { |child| visit_param(child) }
-      @current_scope << Method.new(
+      @current_scope << Def.new(
         node.children[is_singleton ? 1 : 0].to_s,
         is_singleton: is_singleton,
         params: params,
@@ -380,7 +376,7 @@ class RBI
         @current_scope << Interface.new
       when :mixes_in_class_methods
         names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
-        @current_scope << MixesInClassMethods.new(*names)
+        @current_scope << MixesInClassDefs.new(*names)
       when :public
         @current_scope << Public.new
       when :protected

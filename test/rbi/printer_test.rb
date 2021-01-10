@@ -8,6 +8,16 @@ class RBI
     extend T::Sig
     # Scope
 
+    def test_scopes
+      rbi = RBI.new
+      rbi << Module.new("M")
+      rbi << Class.new("C")
+      assert_equal(<<~RBI, rbi.to_rbi)
+        module M; end
+        class C; end
+      RBI
+    end
+
     def test_scope_nested
       rbi = RBI.new do |m|
         m << Module.new("M0") do |m0|
@@ -31,15 +41,6 @@ class RBI
       RBI
     end
 
-    def test_module
-      rbi = RBI.new
-      rbi << Module.new("M")
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        module M; end
-      RBI
-    end
-
     def test_module_with_modifiers
       rbi = RBI.new
       rbi << Module.new("M").interface!
@@ -48,15 +49,6 @@ class RBI
         module M
           interface!
         end
-      RBI
-    end
-
-    def test_class
-      rbi = RBI.new
-      rbi << Class.new("C")
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        class C; end
       RBI
     end
 
@@ -72,24 +64,6 @@ class RBI
       RBI
     end
 
-    def test_class_with_superclass
-      rbi = RBI.new
-      rbi << Class.new("C", superclass: "A")
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        class C < A; end
-      RBI
-    end
-
-    def test_tstruct
-      rbi = RBI.new
-      rbi << TStruct.new("C")
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        class C < T::Struct; end
-      RBI
-    end
-
     # Props
 
     def test_props
@@ -98,9 +72,9 @@ class RBI
       rbi << Const.new("FOO", value: "42")
       rbi << AttrReader.new(:foo)
       rbi << AttrAccessor.new(:foo)
-      rbi << Method.new("foo")
-      rbi << Method.new("foo", params: [Arg.new("a")])
-      rbi << Method.new("foo", params: [Arg.new("a"), Arg.new("b"), Arg.new("c")])
+      rbi << Def.new("foo")
+      rbi << Def.new("foo", params: [Arg.new("a")])
+      rbi << Def.new("foo", params: [Arg.new("a"), Arg.new("b"), Arg.new("c")])
       rbi << Include.new("Foo")
       rbi << Extend.new("Foo")
       rbi << Prepend.new("Foo")
@@ -126,9 +100,9 @@ class RBI
       foo << Const.new("FOO", value: "42")
       foo << AttrReader.new(:foo)
       foo << AttrAccessor.new(:foo)
-      foo << Method.new("foo")
-      foo << Method.new("foo", params: [Arg.new("a")])
-      foo << Method.new("foo", params: [
+      foo << Def.new("foo")
+      foo << Def.new("foo", params: [Arg.new("a")])
+      foo << Def.new("foo", params: [
         Arg.new("a"),
         OptArg.new("b", value: "_"),
         KwArg.new("c"),
@@ -181,11 +155,11 @@ class RBI
 
     def test_method_sigs
       rbi = RBI.new
-      rbi << Method.new("foo")
-      rbi << Method.new("foo", return_type: "String")
-      rbi << Method.new("foo", return_type: "void", params: [Arg.new("a", type: "String")])
-      rbi << Method.new("foo", return_type: "Integer", params: [Arg.new("a", type: "String")])
-      rbi << Method.new("foo", return_type: "void", params: [
+      rbi << Def.new("foo")
+      rbi << Def.new("foo", return_type: "String")
+      rbi << Def.new("foo", return_type: "void", params: [Arg.new("a", type: "String")])
+      rbi << Def.new("foo", return_type: "Integer", params: [Arg.new("a", type: "String")])
+      rbi << Def.new("foo", return_type: "void", params: [
         Arg.new("a", type: "String"),
         OptArg.new("b", value: "_", type: "String"),
         KwArg.new("c", type: "String"),

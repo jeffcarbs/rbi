@@ -12,7 +12,6 @@ class RBI
 end
 
 require 'rbi/model'
-require 'rbi/sorbet'
 require 'rbi/printer'
 require 'rbi/parser'
 require 'rbi/version'
