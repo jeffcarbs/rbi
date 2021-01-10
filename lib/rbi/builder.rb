@@ -65,7 +65,7 @@ class RBI
 
     sig { params(node: AST::Node).void }
     def visit_scope(node)
-      name = NameBuilder.parse_node(node.children[0])
+      name = T.must(NameBuilder.parse_node(node.children[0]))
 
       scope = if node.type == :module
         Module.new(name)
@@ -94,7 +94,7 @@ class RBI
     sig { params(node: AST::Node).void }
     def visit_const_assign(node)
       @current_scope << Const.new(
-        NameBuilder.parse_node(node),
+        T.must(NameBuilder.parse_node(node)),
         value: ExpBuilder.build(node.children[2])
       )
     end
@@ -199,7 +199,7 @@ class RBI
         &.children&.fetch(0, nil)
         &.children&.fetch(0, nil) == :default
       default_value = has_default ? ExpBuilder.build(node.children[4]&.children[0]&.children[1]) : nil
-      block.call(name, type, default_value)
+      block.call(name, T.must(type), default_value)
     end
 
     sig { params(node: AST::Node).void }

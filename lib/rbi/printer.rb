@@ -411,6 +411,25 @@ class RBI
     include Printable
   end
 
+  class InSigPart
+    extend T::Sig
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def oneline?(_v)
+      true
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_before?(_v)
+      true
+    end
+
+    sig { override.params(_v: Printer).returns(T::Boolean) }
+    def new_line_after?(_v)
+      true
+    end
+  end
+
   class SAbstract
     extend T::Sig
 

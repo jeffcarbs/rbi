@@ -502,13 +502,18 @@ class RBI
     interface!
   end
 
-  class SAbstract
+  class InSigPart
+    extend T::Helpers
     include InSig
+
+    abstract!
   end
 
-  class Returns
+  class SAbstract < InSigPart
+  end
+
+  class Returns < InSigPart
     extend T::Sig
-    include InSig
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -523,9 +528,8 @@ class RBI
     end
   end
 
-  class Params
+  class Params < InSigPart
     extend T::Sig
-    include InSig
 
     sig { returns(T::Array[Param]) }
     attr_reader :params
