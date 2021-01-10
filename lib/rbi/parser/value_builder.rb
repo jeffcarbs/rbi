@@ -32,7 +32,6 @@ class RBI
     sig { params(node: T.nilable(AST::Node)).void }
     def visit(node)
       return unless node
-      puts node.type
       case node.type
       when :send
         if node.children[0]

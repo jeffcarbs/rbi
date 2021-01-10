@@ -173,19 +173,38 @@ class RBI
       when :private
         @current_scope << Private.new
       when :prop
-        type = ExpBuilder.build(node.children[3])
-        @current_scope << TProp.new(node.children[2].children[0].to_s, type: type)
+        visit_prop(node) do |name, type, default_value|
+          @current_scope << TProp.new(name, type: type, default: default_value)
+        end
       when :const
-        type = ExpBuilder.build(node.children[3])
-        @current_scope << TConst.new(node.children[2].children[0].to_s, type: type, default: "")
+        visit_prop(node) do |name, type, default_value|
+          @current_scope << TConst.new(name, type: type, default: default_value)
+        end
       else
         raise "Unsupported call type #{method_name}"
       end
     end
 
+    sig do
+      params(
+        node: AST::Node,
+        block: T.proc.params(name: String, type: String, default_value: T.nilable(String)).void
+      ).void
+    end
+    def visit_prop(node, &block)
+      name = node.children[2].children[0].to_s
+      type = ExpBuilder.build(node.children[3])
+      has_default = node.children[4]
+        &.children&.fetch(0, nil)
+        &.children&.fetch(0, nil)
+        &.children&.fetch(0, nil) == :default
+      default_value = has_default ? ExpBuilder.build(node.children[4]&.children[0]&.children[1]) : nil
+      block.call(name, type, default_value)
+    end
+
     sig { params(node: AST::Node).void }
     def visit_sig(node)
-      sig = Sig.from_node(node)
+      sig = SigBuilder.build(node)
       return nil unless sig
       @current_scope << sig
     end

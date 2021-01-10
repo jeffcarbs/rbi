@@ -182,9 +182,9 @@ class RBI
       rbi = RBI.new
       rbi << Method.new("foo")
       rbi << Method.new("foo", return_type: "String")
-      rbi << Method.new("foo", params: [Arg.new("a", type: "String")])
-      rbi << Method.new("foo", params: [Arg.new("a", type: "String")], return_type: "Integer")
-      rbi << Method.new("foo", params: [
+      rbi << Method.new("foo", return_type: "void", params: [Arg.new("a", type: "String")])
+      rbi << Method.new("foo", return_type: "Integer", params: [Arg.new("a", type: "String")])
+      rbi << Method.new("foo", return_type: "void", params: [
         Arg.new("a", type: "String"),
         OptArg.new("b", value: "_", type: "String"),
         KwArg.new("c", type: "String"),
@@ -197,13 +197,13 @@ class RBI
         sig { returns(String) }
         def foo; end
 
-        sig { params(a: String).returns(T.untyped) }
+        sig { params(a: String).void }
         def foo(a); end
 
         sig { params(a: String).returns(Integer) }
         def foo(a); end
 
-        sig { params(a: String, b: String, c: String, d: String).returns(T.untyped) }
+        sig { params(a: String, b: String, c: String, d: String).void }
         def foo(a, b = _, c:, d: _); end
       RBI
     end

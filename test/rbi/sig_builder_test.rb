@@ -9,7 +9,7 @@ class RBI
 
     sig { params(string: String).returns(String) }
     def parse_sig(string)
-      Sig.from_string(string).to_rbi
+      SigBuilder.parse(string).to_rbi
     end
 
     sig { params(exp: String, string: String).void }
@@ -25,11 +25,11 @@ class RBI
     # Tests
 
     def test_parse_empty
-      assert_nil(Sig.from_string(""))
+      assert_nil(SigBuilder.parse(""))
     end
 
     def test_parse_empty_sig
-      assert_parse_identical("sig { }")
+      assert_parse_identical("sig {  }\n")
     end
   end
 end

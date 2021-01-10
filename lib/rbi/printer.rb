@@ -384,28 +384,9 @@ class RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       v.printt("sig { ")
-      unless params.empty?
-        v.print("params(")
-        params.each_with_index do |param, index|
-          v.print(", ") if index > 0
-          v.print(param.name.to_s)
-          v.print(": ")
-          type = param.type
-          if type
-            v.print(type.to_s)
-          else
-            v.print("T.untyped")
-          end
-        end
-        v.print(").")
-      end
-      returns = self.returns
-      if returns == "void"
-        v.print("void")
-      elsif returns
-        v.print("returns(#{returns})")
-      else
-        v.print("returns(T.untyped)")
+      body.each_with_index do |builder, index|
+        v.print(".") if index > 0
+        v.visit(builder)
       end
       v.printn(" }")
     end
@@ -423,6 +404,42 @@ class RBI
     sig { override.params(_v: Printer).returns(T::Boolean) }
     def new_line_after?(_v)
       false
+    end
+  end
+
+  module InSig
+    include Printable
+  end
+
+  class SAbstract
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("abstract")
+    end
+  end
+
+  class Returns
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print(type == "void" ? "void" : "returns(#{type})")
+    end
+  end
+
+  class Params
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.print("params(")
+      params.each_with_index do |param, index|
+        v.print(", ") if index > 0
+        v.print("#{param.name.to_s}: #{param.type.to_s}")
+      end
+      v.print(")")
     end
   end
 end

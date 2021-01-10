@@ -28,10 +28,6 @@ class RBI
       assert_parse_identical("")
     end
 
-    def test_parse_commands
-      assert_parse_identical("# typed: true")
-    end
-
     def test_scopes_nesting
       rbi = <<~RBI
         module M
@@ -182,13 +178,11 @@ class RBI
           sig { abstract.params(a: Integer).void }
           def foo(a); end
 
-          sig { returns(String) }
+          sig { returns(T::Array[String]) }
           attr_reader :a
         end
 
-        sig do
-          returns(T.nilable(String))
-        end
+        sig { returns(T.nilable(String)) }
         def foo; end
       RBI
       assert_parse_identical(rbi)

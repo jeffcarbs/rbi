@@ -12,7 +12,7 @@ class RBI
     @root = T.let(Module.new("<root>"), Module)
   end
 
-  sig { params(node: Def).void }
+  sig { params(node: InScope).void }
   def <<(node)
     @root << node
   end
@@ -47,7 +47,7 @@ class RBI
     end
   end
 
-  module Def
+  module InScope
     extend T::Helpers
     include Node
 
@@ -57,20 +57,20 @@ class RBI
   class Scope < Symbol
     extend T::Sig
     extend T::Helpers
-    include Def
+    include InScope
 
     abstract!
 
-    sig { returns(T::Array[Def]) }
+    sig { returns(T::Array[InScope]) }
     attr_reader :body
 
     sig { params(name: String).void }
     def initialize(name)
       super(name)
-      @body = T.let([], T::Array[Def])
+      @body = T.let([], T::Array[InScope])
     end
 
-    sig { params(node: Def).void }
+    sig { params(node: InScope).void }
     def <<(node)
       @body << node
     end
@@ -79,7 +79,7 @@ class RBI
   class Call
     extend T::Sig
     extend T::Helpers
-    include Def
+    include InScope
 
     abstract!
 
@@ -223,7 +223,7 @@ class RBI
   class Attr < Call
     extend T::Sig
     extend T::Helpers
-    include Def
+    include InScope
 
     abstract!
 
@@ -298,7 +298,7 @@ class RBI
 
   class Const < Symbol
     extend T::Sig
-    include Def
+    include InScope
 
     sig { returns(T.nilable(String)) }
     attr_reader :value
@@ -312,7 +312,7 @@ class RBI
 
   class Method < Symbol
     extend T::Sig
-    include Def
+    include InScope
 
     sig { returns(T::Boolean) }
     attr_reader :is_singleton
@@ -340,12 +340,12 @@ class RBI
       @params = params
       @return_type = return_type
       @sigs = T.let([], T::Array[Sig])
-      @sigs << default_sig if !params.select(&:type).empty? || return_type
+      @sigs << default_sig if params.one?(&:type) || return_type
     end
 
     sig { returns(Sig) }
     def default_sig
-      Sig.new(params: params, returns: return_type)
+      Sig.new(params: params.empty? ? nil : params, returns: return_type)
     end
   end
 
@@ -476,22 +476,67 @@ class RBI
 
   class Sig
     extend T::Sig
-    include Def
+    include InScope
 
-    sig { returns(T::Boolean) }
-    attr_accessor :is_abstract
+    sig { returns(T::Array[InSig]) }
+    attr_reader :body
+
+    sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String)).void }
+    def initialize(is_abstract: false, params: nil, returns: nil)
+      @body = T.let([], T::Array[InSig])
+      @body << SAbstract.new if is_abstract
+      @body << Params.new(params) if params
+      @body << Returns.new(returns) if returns
+    end
+
+    sig { params(node: InSig).void }
+    def <<(node)
+      @body << node
+    end
+  end
+
+  module InSig
+    extend T::Helpers
+    include Node
+
+    interface!
+  end
+
+  class SAbstract
+    include InSig
+  end
+
+  class Returns
+    extend T::Sig
+    include InSig
+
+    sig { returns(T.nilable(String)) }
+    attr_reader :type
+
+    sig do
+      params(
+        type: T.nilable(String)
+      ).void
+    end
+    def initialize(type = nil)
+      @type = type
+    end
+  end
+
+  class Params
+    extend T::Sig
+    include InSig
 
     sig { returns(T::Array[Param]) }
     attr_reader :params
 
-    sig { returns(T.nilable(String)) }
-    attr_accessor :returns
-
-    sig { params(is_abstract: T::Boolean, params: T::Array[Param], returns: T.nilable(String)).void }
-    def initialize(is_abstract: false, params: [], returns: nil)
-      @is_abstract = is_abstract
+    sig do
+      params(
+        params: T::Array[Param],
+      ).void
+    end
+    def initialize(params = [])
       @params = params
-      @returns = returns
     end
   end
 end
