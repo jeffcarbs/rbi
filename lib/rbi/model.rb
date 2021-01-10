@@ -18,12 +18,6 @@ class RBI
     @root << node
   end
 
-  sig { params(node: T.all(Node, InScope)).returns(T.all(Node, InScope)) }
-  def append(node)
-    @root.append(node)
-    node
-  end
-
   class Node
     extend T::Sig
     extend T::Helpers
@@ -62,12 +56,6 @@ class RBI
     sig { params(node: T.all(Node, InScope)).void }
     def <<(node)
       @body << node
-    end
-
-    sig { params(node: T.all(Node, InScope)).returns(T.all(Node, InScope)) }
-    def append(node)
-      @body << node
-      node
     end
   end
 
@@ -252,6 +240,8 @@ class RBI
     end
   end
 
+  # Attributes
+
   class Attr < Send
     extend T::Sig
     extend T::Helpers
@@ -327,6 +317,8 @@ class RBI
     end
   end
 
+  # Ancestors
+
   class Include < Send
     extend T::Sig
 
@@ -353,6 +345,8 @@ class RBI
       super(:prepend, [name, *names])
     end
   end
+
+  # Visibility
 
   class Visibility < Send
     extend T::Helpers
