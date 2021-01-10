@@ -113,7 +113,7 @@ class RBI
 
     sig { returns(T::Boolean) }
     def interface?
-      body.one? { |body| body.is_a?(Interface) }
+      body.one? { |child| child.is_a?(Interface) }
     end
   end
 
@@ -154,7 +154,7 @@ class RBI
 
     sig { returns(T::Boolean) }
     def abstract?
-      body.one? { |body| body.is_a?(Abstract) }
+      body.one? { |child| child.is_a?(Abstract) }
     end
 
     sig { void }
@@ -164,7 +164,7 @@ class RBI
 
     sig { returns(T::Boolean) }
     def sealed?
-      body.one? { |body| body.is_a?(Sealed) }
+      body.one? { |child| child.is_a?(Sealed) }
     end
   end
 
@@ -226,7 +226,6 @@ class RBI
   class Attr < Call
     extend T::Sig
     extend T::Helpers
-    include InScope
 
     abstract!
 
@@ -505,19 +504,13 @@ class RBI
     interface!
   end
 
-  class InSigPart
-    extend T::Helpers
+  class SAbstract
+    include InSig
+  end
+
+  class Returns
     extend T::Sig
     include InSig
-
-    abstract!
-  end
-
-  class SAbstract < InSigPart
-  end
-
-  class Returns < InSigPart
-    extend T::Sig
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -533,8 +526,9 @@ class RBI
     end
   end
 
-  class Params < InSigPart
+  class Params
     extend T::Sig
+    include InSig
 
     sig { returns(T::Array[Param]) }
     attr_reader :params
