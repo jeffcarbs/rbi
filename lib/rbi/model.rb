@@ -26,27 +26,6 @@ class RBI
     interface!
   end
 
-  class NamedNode
-    extend T::Sig
-    extend T::Helpers
-    include Node
-
-    abstract!
-
-    sig { returns(String) }
-    attr_reader :name
-
-    sig { params(name: String).void }
-    def initialize(name)
-      @name = name
-    end
-
-    sig { returns(String) }
-    def to_s
-      name.to_s
-    end
-  end
-
   module InScope
     extend T::Helpers
     include Node
@@ -54,19 +33,22 @@ class RBI
     interface!
   end
 
-  class Scope < NamedNode
+  class Scope
     extend T::Sig
     extend T::Helpers
     include InScope
 
     abstract!
 
+    sig { returns(String) }
+    attr_reader :name
+
     sig { returns(T::Array[InScope]) }
     attr_reader :body
 
     sig { params(name: String).void }
     def initialize(name)
-      super(name)
+      @name = name
       @body = T.let([], T::Array[InScope])
     end
 
@@ -298,23 +280,29 @@ class RBI
     end
   end
 
-  class Const < NamedNode
+  class Const
     extend T::Sig
     include InScope
+
+    sig { returns(String) }
+    attr_reader :name
 
     sig { returns(T.nilable(String)) }
     attr_reader :value
 
     sig { params(name: String, value: T.nilable(String)).void }
     def initialize(name, value: nil)
-      super(name)
+      @name = name
       @value = value
     end
   end
 
-  class Method < NamedNode
+  class Method
     extend T::Sig
     include InScope
+
+    sig { returns(String) }
+    attr_reader :name
 
     sig { returns(T::Boolean) }
     attr_reader :is_singleton
@@ -337,7 +325,7 @@ class RBI
       ).void
     end
     def initialize(name, is_singleton: false, params: [], return_type: nil)
-      super(name)
+      @name = name
       @is_singleton = is_singleton
       @params = params
       @return_type = return_type
@@ -351,11 +339,15 @@ class RBI
     end
   end
 
-  class Param < NamedNode
+  class Param
     extend T::Helpers
     extend T::Sig
+    include Node
 
     abstract!
+
+    sig { returns(String) }
+    attr_reader :name
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -367,7 +359,7 @@ class RBI
       ).void
     end
     def initialize(name, type: nil)
-      super(name)
+      @name = name
       @type = type
     end
   end
