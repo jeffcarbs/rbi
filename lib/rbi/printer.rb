@@ -170,7 +170,7 @@ class RBI
     end
   end
 
-  class Call
+  class Send
     extend T::Sig
 
     sig { override.params(v: Printer).void }

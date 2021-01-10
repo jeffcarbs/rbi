@@ -61,21 +61,10 @@ class RBI
   class Module < Scope
     extend T::Sig
 
-    sig { params(name: String, interface: T::Boolean, block: T.nilable(T.proc.params(scope: Module).void)).void }
-    def initialize(name, interface: false, &block)
+    sig { params(name: String, block: T.nilable(T.proc.params(scope: Module).void)).void }
+    def initialize(name, &block)
       super(name)
-      interface! if interface
       block&.call(self)
-    end
-
-    sig { void }
-    def interface!
-      body << Interface.new
-    end
-
-    sig { returns(T::Boolean) }
-    def interface?
-      body.one? { |child| child.is_a?(Interface) }
     end
   end
 
@@ -88,38 +77,14 @@ class RBI
     sig do
       params(
         name: String,
-        abstract: T::Boolean,
-        sealed: T::Boolean,
         superclass: T.nilable(String),
         block: T.nilable(T.proc.params(scope: Class).void),
       ).void
     end
-    def initialize(name, abstract: false, sealed: false, superclass: nil, &block)
+    def initialize(name, superclass: nil, &block)
       super(name)
-      abstract! if abstract
-      sealed! if sealed
       @superclass = superclass
       block&.call(self)
-    end
-
-    sig { void }
-    def abstract!
-      body << Abstract.new
-    end
-
-    sig { returns(T::Boolean) }
-    def abstract?
-      body.one? { |child| child.is_a?(Abstract) }
-    end
-
-    sig { void }
-    def sealed!
-      body << Sealed.new
-    end
-
-    sig { returns(T::Boolean) }
-    def sealed?
-      body.one? { |child| child.is_a?(Sealed) }
     end
   end
 
@@ -248,9 +213,9 @@ class RBI
 
   class BlockArg < Param; end
 
-  # Calls
+  # Sends
 
-  class Call < Node
+  class Send < Node
     extend T::Sig
     extend T::Helpers
     include InScope
@@ -270,7 +235,7 @@ class RBI
     end
   end
 
-  class Attr < Call
+  class Attr < Send
     extend T::Sig
     extend T::Helpers
 
@@ -345,7 +310,7 @@ class RBI
     end
   end
 
-  class Include < Call
+  class Include < Send
     extend T::Sig
 
     sig { params(name: String, names: String).void }
@@ -354,7 +319,7 @@ class RBI
     end
   end
 
-  class Extend < Call
+  class Extend < Send
     extend T::Sig
 
     sig { params(name: String, names: String).void }
@@ -363,7 +328,7 @@ class RBI
     end
   end
 
-  class Prepend < Call
+  class Prepend < Send
     extend T::Sig
 
     sig { params(name: String, names: String).void }
@@ -372,7 +337,7 @@ class RBI
     end
   end
 
-  class Visibility < Call
+  class Visibility < Send
     extend T::Helpers
 
     abstract!

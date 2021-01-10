@@ -2,38 +2,47 @@
 # frozen_string_literal: true
 
 class RBI
-  class Abstract < Call
-    sig { void }
-    def initialize
-      super(:abstract!, [])
+
+  # Scopes
+
+  class Module < Scope
+    extend T::Sig
+
+    sig { returns(T.self_type) }
+    def interface!
+      body << Interface.new
+      self
+    end
+
+    sig { returns(T::Boolean) }
+    def interface?
+      body.one? { |child| child.is_a?(Interface) }
     end
   end
 
-  class Interface < Call
-    sig { void }
-    def initialize
-      super(:interface!, [])
-    end
-  end
+  class Class < Scope
+    extend T::Sig
 
-  class Sealed < Call
-    sig { void }
-    def initialize
-      super(:sealed!, [])
+    sig { returns(T.self_type) }
+    def abstract!
+      body << Abstract.new
+      self
     end
-  end
 
-  class MixesInClassMethods < Call
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:mixes_in_class_methods, [name, *names])
+    sig { returns(T::Boolean) }
+    def abstract?
+      body.one? { |child| child.is_a?(Abstract) }
     end
-  end
 
-  class TypeMember < Call
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:type_member, [name, *names])
+    sig { returns(T.self_type) }
+    def sealed!
+      body << Sealed.new
+      self
+    end
+
+    sig { returns(T::Boolean) }
+    def sealed?
+      body.one? { |child| child.is_a?(Sealed) }
     end
   end
 
@@ -49,11 +58,50 @@ class RBI
       ).void
     end
     def initialize(name, abstract: false, sealed: false)
-      super(name, abstract: abstract, sealed: sealed, superclass: "T::Struct")
+      super(name, superclass: "T::Struct")
+      abstract! if abstract
+      sealed! if sealed
     end
   end
 
-  class TProp < Call
+  # Sends
+
+  class Abstract < Send
+    sig { void }
+    def initialize
+      super(:abstract!, [])
+    end
+  end
+
+  class Interface < Send
+    sig { void }
+    def initialize
+      super(:interface!, [])
+    end
+  end
+
+  class Sealed < Send
+    sig { void }
+    def initialize
+      super(:sealed!, [])
+    end
+  end
+
+  class MixesInClassMethods < Send
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:mixes_in_class_methods, [name, *names])
+    end
+  end
+
+  class TypeMember < Send
+    sig { params(name: String, names: String).void }
+    def initialize(name, *names)
+      super(:type_member, [name, *names])
+    end
+  end
+
+  class TProp < Send
     extend T::Sig
 
     sig { params(name: String, type: String, default: T.nilable(String)).void }
@@ -66,7 +114,7 @@ class RBI
     end
   end
 
-  class TConst < Call
+  class TConst < Send
     extend T::Sig
 
     sig { params(name: String, type: String, default: T.nilable(String)).void }

@@ -42,7 +42,7 @@ class RBI
 
     def test_module_with_modifiers
       rbi = RBI.new
-      rbi << Module.new("M", interface: true)
+      rbi << Module.new("M").interface!
 
       assert_equal(<<~RBI, rbi.to_rbi)
         module M
@@ -62,7 +62,7 @@ class RBI
 
     def test_class_with_modifiers
       rbi = RBI.new
-      rbi << Class.new("C", superclass: "A", abstract: true, sealed: true)
+      rbi << Class.new("C", superclass: "A").abstract!.sealed!
 
       assert_equal(<<~RBI, rbi.to_rbi)
         class C < A
