@@ -13,27 +13,25 @@ class RBI
     block&.call(self)
   end
 
-  sig { params(node: InScope).void }
+  sig { params(node: T.all(Node, InScope)).void }
   def <<(node)
     @root << node
   end
 
-  module Node
+  class Node
     extend T::Sig
     extend T::Helpers
-    include Kernel
 
-    interface!
+    abstract!
   end
 
   module InScope
     extend T::Helpers
-    include Node
 
     interface!
   end
 
-  class Scope
+  class Scope < Node
     extend T::Sig
     extend T::Helpers
     include InScope
@@ -43,22 +41,22 @@ class RBI
     sig { returns(String) }
     attr_reader :name
 
-    sig { returns(T::Array[InScope]) }
+    sig { returns(T::Array[T.all(Node, InScope)]) }
     attr_reader :body
 
     sig { params(name: String).void }
     def initialize(name)
       @name = name
-      @body = T.let([], T::Array[InScope])
+      @body = T.let([], T::Array[T.all(Node, InScope)])
     end
 
-    sig { params(node: InScope).void }
+    sig { params(node: T.all(Node, InScope)).void }
     def <<(node)
       @body << node
     end
   end
 
-  class Call
+  class Call < Node
     extend T::Sig
     extend T::Helpers
     include InScope
@@ -280,7 +278,7 @@ class RBI
     end
   end
 
-  class Const
+  class Const < Node
     extend T::Sig
     include InScope
 
@@ -297,7 +295,7 @@ class RBI
     end
   end
 
-  class Method
+  class Method < Node
     extend T::Sig
     include InScope
 
@@ -339,10 +337,9 @@ class RBI
     end
   end
 
-  class Param
+  class Param < Node
     extend T::Helpers
     extend T::Sig
-    include Node
 
     abstract!
 
@@ -468,22 +465,22 @@ class RBI
     end
   end
 
-  class Sig
+  class Sig < Node
     extend T::Sig
     include InScope
 
-    sig { returns(T::Array[InSig]) }
+    sig { returns(T::Array[T.all(Node, InSig)]) }
     attr_reader :body
 
     sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String)).void }
     def initialize(is_abstract: false, params: nil, returns: nil)
-      @body = T.let([], T::Array[InSig])
+      @body = T.let([], T::Array[T.all(Node, InSig)])
       @body << SAbstract.new if is_abstract
       @body << Params.new(params) if params
       @body << Returns.new(returns) if returns
     end
 
-    sig { params(node: InSig).void }
+    sig { params(node: T.all(Node, InSig)).void }
     def <<(node)
       @body << node
     end
@@ -491,16 +488,22 @@ class RBI
 
   module InSig
     extend T::Helpers
-    include Node
 
     interface!
   end
 
-  class SAbstract
+  class SigModifier < Node
+    extend T::Helpers
+    include InSig
+
+    abstract!
+  end
+
+  class SAbstract < SigModifier
     include InSig
   end
 
-  class Returns
+  class Returns < SigModifier
     extend T::Sig
     include InSig
 
@@ -518,7 +521,7 @@ class RBI
     end
   end
 
-  class Params
+  class Params < SigModifier
     extend T::Sig
     include InSig
 

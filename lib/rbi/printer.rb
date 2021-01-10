@@ -145,7 +145,7 @@ class RBI
     end
   end
 
-  module Node
+  class Node
     extend T::Sig
     include Printable
 
