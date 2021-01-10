@@ -63,7 +63,7 @@ class RBI
         end
         @out << "]"
       when :str
-        @out << "\"#{node.children[0].to_s}\""
+        @out << "\"#{node.children[0]}\""
       when :int
         @out << node.children[0]
       when :nil

@@ -504,6 +504,7 @@ class RBI
 
   class InSigPart
     extend T::Helpers
+    extend T::Sig
     include InSig
 
     abstract!
@@ -524,6 +525,7 @@ class RBI
       ).void
     end
     def initialize(type = nil)
+      super()
       @type = type
     end
   end
@@ -540,6 +542,7 @@ class RBI
       ).void
     end
     def initialize(params = [])
+      super()
       @params = params
     end
   end

@@ -102,7 +102,7 @@ class RBI
     sig { params(node: AST::Node).void }
     def visit_def(node)
       is_singleton = node.type == :defs
-      params = node.children[is_singleton ? 2 : 1].children.map { |node| visit_param(node) }
+      params = node.children[is_singleton ? 2 : 1].children.map { |child| visit_param(child) }
       @current_scope << Method.new(
         node.children[is_singleton ? 1 : 0].to_s,
         is_singleton: is_singleton,
@@ -198,7 +198,11 @@ class RBI
         &.children&.fetch(0, nil)
         &.children&.fetch(0, nil)
         &.children&.fetch(0, nil) == :default
-      default_value = has_default ? ExpBuilder.build(node.children[4]&.children[0]&.children[1]) : nil
+      default_value = if has_default
+        ExpBuilder.build(node.children.fetch(4, nil)
+          &.children&.fetch(0, nil)
+          &.children&.fetch(1, nil))
+      end
       block.call(name, T.must(type), default_value)
     end
 

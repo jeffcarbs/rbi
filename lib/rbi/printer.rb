@@ -456,7 +456,7 @@ class RBI
       v.print("params(")
       params.each_with_index do |param, index|
         v.print(", ") if index > 0
-        v.print("#{param.name.to_s}: #{param.type.to_s}")
+        v.print("#{param.name}: #{param.type}")
       end
       v.print(")")
     end
