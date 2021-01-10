@@ -26,8 +26,7 @@ class RBI
     interface!
   end
 
-  # Something that can be defined at the top level of a RBI file
-  class Symbol
+  class NamedNode
     extend T::Sig
     extend T::Helpers
     include Node
@@ -55,7 +54,7 @@ class RBI
     interface!
   end
 
-  class Scope < Symbol
+  class Scope < NamedNode
     extend T::Sig
     extend T::Helpers
     include InScope
@@ -300,7 +299,7 @@ class RBI
     end
   end
 
-  class Const < Symbol
+  class Const < NamedNode
     extend T::Sig
     include InScope
 
@@ -314,7 +313,7 @@ class RBI
     end
   end
 
-  class Method < Symbol
+  class Method < NamedNode
     extend T::Sig
     include InScope
 
@@ -353,7 +352,7 @@ class RBI
     end
   end
 
-  class Param < Symbol
+  class Param < NamedNode
     extend T::Helpers
     extend T::Sig
 

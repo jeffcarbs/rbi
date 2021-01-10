@@ -105,6 +105,7 @@ class RBI
     sig { params(node: Node, previous: T::Array[Node]).returns(T::Boolean) }
     def blank_before?(node, previous)
       last = previous[-1]
+      before_last = previous[-2]
       return false unless last
       return true unless oneline?(node)
       return true unless oneline?(last) && oneline?(node)
@@ -113,9 +114,9 @@ class RBI
       return true if node.is_a?(Sig) && !last.is_a?(Sig)
       # return true if !node.is_a?(Sig) && last
       return true if !last.is_a?(Sig) && (
-        (previous[-2]&.is_a?(Method) && !previous[-2].sigs.empty?) ||
-        (previous[-2]&.is_a?(Attr) && !previous[-2].sigs.empty?) ||
-        previous[-2]&.is_a?(Sig)
+        (before_last&.is_a?(Method) && !before_last.sigs.empty?) ||
+        (before_last&.is_a?(Attr) && !before_last.sigs.empty?) ||
+        before_last&.is_a?(Sig)
       )
       false
     end
