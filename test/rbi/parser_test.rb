@@ -7,9 +7,9 @@ class RBI
   module ParserTestHelper
     extend T::Sig
 
-    sig { params(_string: String).returns(T.nilable(String)) }
-    def parse_string(_string)
-      Kernel.raise "Must be implemented"
+    sig { params(string: String).returns(T.nilable(String)) }
+    def parse_string(string)
+      RBI.from_string(string).to_rbi
     end
 
     private
@@ -177,11 +177,6 @@ class RBI
   class ParserTest < Minitest::Test
     extend T::Sig
     include ParserTestHelper
-
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_string(string)
-      RBI.from_string(string).to_rbi
-    end
 
     def test_parse_empty
       assert_identical("")
