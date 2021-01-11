@@ -7,9 +7,9 @@ class RBI
   module ParserTestHelper
     extend T::Sig
 
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_string(string)
-      nil
+    sig { params(_string: String).returns(T.nilable(String)) }
+    def parse_string(_string)
+      Kernel.raise "Must be implemented"
     end
 
     private
@@ -30,28 +30,161 @@ class RBI
     end
   end
 
-  class ParserTest < Minitest::Test
+  class NameVisitorTest < Minitest::Test
     extend T::Sig
+    include ParserTestHelper
 
     sig { params(string: String).returns(T.nilable(String)) }
-    def parse_rbi(string)
+    def parse_string(string)
+      NameVisitor.visit(parse_internal(string))
+    end
+
+    def test_parse_error
+      assert_nil(parse_string(""))
+      assert_nil(parse_string(";"))
+      assert_nil(parse_string("10"))
+      assert_nil(parse_string("-10"))
+    end
+
+    def test_parse_names
+      assert_identical("_")
+      assert_identical("a")
+      assert_identical("A")
+      assert_identical("foo")
+      assert_identical("Foo")
+      assert_identical("foo10")
+      assert_identical("Foo10")
+      assert_identical("_foo")
+      assert_identical("_Foo")
+    end
+
+    def test_parse_qnames
+      assert_identical("_::_")
+      assert_identical("a::a")
+      assert_identical("A::A")
+      assert_identical("foo::foo")
+      assert_identical("Foo::Foo")
+      assert_identical("foo10::foo10")
+      assert_identical("Foo10::Foo10")
+      assert_identical("_foo::_foo")
+      assert_identical("_Foo::_Foo")
+      assert_identical("_::a::A::Foo::foo::_foo::_Foo10")
+      assert_identical("::A")
+      assert_identical("::A::Foo::FOO")
+      assert_identical("::Foo::a")
+      assert_identical("::Foo::foo")
+      assert_parse("::Foo::foo::bar", "::Foo::foo.bar")
+    end
+
+    def test_parse_only_names
+      assert_parse("Foo", "Foo[A, B, C]")
+      assert_parse("Foo::Bar", "Foo::Bar[A, B, C]")
+      assert_parse("Foo", "Foo(A, B, C)")
+      assert_parse("Foo::Bar", "Foo::Bar(A, B, C)")
+      assert_parse("Foo::bar", "Foo.bar(A, B, C)")
+      assert_parse("Foo::Bar::bar", "Foo::Bar.bar(A, B, C)")
+      assert_parse("F", "F = 10")
+      assert_parse("FOO", "FOO = FOO")
+      assert_parse("F::F::F", "F::F::F = FOO")
+      assert_parse("::Foo", "::Foo = FOO")
+    end
+  end
+
+  class ExpVisitorTest < Minitest::Test
+    extend T::Sig
+    include ParserTestHelper
+
+    sig { params(string: String).returns(T.nilable(String)) }
+    def parse_string(string)
+      ExpBuilder.parse(string)
+    end
+
+    def test_parse_error
+      assert_nil(parse_string(""))
+      assert_nil(parse_string(";"))
+    end
+
+    def test_parse_literals
+      assert_identical("0")
+      assert_identical("\"foo\"")
+      assert_identical("nil")
+      assert_identical("-10")
+      assert_parse("10.*(10)", "10 * 10")
+      assert_parse("\"foo\"", "'foo'")
+    end
+
+    def test_parse_names
+      assert_identical("_")
+      assert_identical("a")
+      assert_identical("A")
+      assert_identical("foo")
+      assert_identical("Foo")
+      assert_identical("foo10")
+      assert_identical("Foo10")
+      assert_identical("_foo")
+      assert_identical("_Foo")
+    end
+
+    def test_parse_qnames
+      assert_identical("A::A")
+      assert_identical("Foo::Foo")
+      assert_identical("Foo10::Foo10")
+      assert_identical("::A")
+      assert_identical("::A::Foo::FOO")
+    end
+
+    def test_parse_qsends
+      assert_identical("::Foo.a")
+      assert_identical("::Foo.foo.bar")
+      assert_identical("::Foo.foo(A, B, C)")
+      assert_identical("Foo[A, B, C]")
+      assert_identical("Foo::Bar[A, B, C]")
+      assert_identical("Foo(A, B, C)")
+      assert_identical("Foo.Bar(A, B, C)")
+      assert_identical("Foo.bar(A, B, C)")
+      assert_identical("Foo::Bar.bar(A, B, C)")
+      assert_parse("_._", "_::_")
+      assert_parse("a.a", "a::a")
+      assert_parse("Foo.foo", "Foo::foo")
+      assert_parse("foo.foo", "foo::foo")
+      assert_parse("foo10.foo10", "foo10::foo10")
+      assert_parse("_foo._foo", "_foo::_foo")
+      assert_parse("_Foo._Foo", "_Foo::_Foo")
+      assert_parse("_.a::A::Foo.foo._foo._Foo10", "_::a::A::Foo::foo::_foo::_Foo10")
+      assert_parse("::Foo.a", "::Foo::a")
+      assert_parse("::Foo.foo.bar(A, B, C)", "::Foo::foo.bar(A, B, C)")
+    end
+  end
+
+  class SigBuilderTest < Minitest::Test
+    extend T::Sig
+    include ParserTestHelper
+
+    sig { params(string: String).returns(T.nilable(String)) }
+    def parse_string(string)
+      SigBuilder.parse(string)&.to_rbi
+    end
+
+    def test_parse_empty
+      assert_nil(parse_string(""))
+    end
+
+    def test_parse_empty_sig
+      assert_identical("sig {}\n")
+    end
+  end
+
+  class ParserTest < Minitest::Test
+    extend T::Sig
+    include ParserTestHelper
+
+    sig { params(string: String).returns(T.nilable(String)) }
+    def parse_string(string)
       RBI.from_string(string).to_rbi
     end
 
-    sig { params(exp: String, string: String).void }
-    def assert_parse(exp, string)
-      assert_equal(exp, parse_rbi(string))
-    end
-
-    sig { params(string: String).void }
-    def assert_parse_identical(string)
-      assert_equal(string, parse_rbi(string))
-    end
-
-    # Tests
-
     def test_parse_empty
-      assert_parse_identical("")
+      assert_identical("")
     end
 
     def test_scopes_nesting
@@ -73,7 +206,7 @@ class RBI
           module M2; end
         end
       RBI
-      assert_parse_identical(rbi)
+      assert_identical(rbi)
     end
 
     def test_scopes_body
@@ -87,7 +220,7 @@ class RBI
           sealed!
         end
       RBI
-      assert_parse_identical(rbi)
+      assert_identical(rbi)
     end
 
     def test_parse_modules
@@ -171,7 +304,7 @@ class RBI
         C::C = foo
         ::C::C = foo
       RBI
-      assert_parse_identical(rbi)
+      assert_identical(rbi)
     end
 
     def test_parse_calls
@@ -186,7 +319,7 @@ class RBI
         attr_reader :a
         attr_accessor :a, :b
       RBI
-      assert_parse_identical(rbi)
+      assert_identical(rbi)
     end
 
     def test_parse_sigs
@@ -211,7 +344,7 @@ class RBI
         sig { returns(T.nilable(String)) }
         def foo; end
       RBI
-      assert_parse_identical(rbi)
+      assert_identical(rbi)
     end
 
     def test_parse_tstruct
@@ -226,172 +359,7 @@ class RBI
           def foo; end
         end
       RBI
-      assert_parse_identical(rbi)
-    end
-  end
-
-  class NameVisitorTest < Minitest::Test
-    extend T::Sig
-    include ParserTestHelper
-
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_string(string)
-      NameVisitor.visit(parse_internal(string))
-    end
-
-    # Tests
-
-    def test_parse_error
-      assert_nil(parse_string(""))
-      assert_nil(parse_string(";"))
-      assert_nil(parse_string("10"))
-      assert_nil(parse_string("-10"))
-    end
-
-    def test_parse_names
-      assert_identical("_")
-      assert_identical("a")
-      assert_identical("A")
-      assert_identical("foo")
-      assert_identical("Foo")
-      assert_identical("foo10")
-      assert_identical("Foo10")
-      assert_identical("_foo")
-      assert_identical("_Foo")
-    end
-
-    def test_parse_qnames
-      assert_identical("_::_")
-      assert_identical("a::a")
-      assert_identical("A::A")
-      assert_identical("foo::foo")
-      assert_identical("Foo::Foo")
-      assert_identical("foo10::foo10")
-      assert_identical("Foo10::Foo10")
-      assert_identical("_foo::_foo")
-      assert_identical("_Foo::_Foo")
-      assert_identical("_::a::A::Foo::foo::_foo::_Foo10")
-      assert_identical("::A")
-      assert_identical("::A::Foo::FOO")
-      assert_identical("::Foo::a")
-      assert_identical("::Foo::foo")
-      assert_parse("::Foo::foo::bar", "::Foo::foo.bar")
-    end
-
-    def test_parse_only_names
-      assert_parse("Foo", "Foo[A, B, C]")
-      assert_parse("Foo::Bar", "Foo::Bar[A, B, C]")
-      assert_parse("Foo", "Foo(A, B, C)")
-      assert_parse("Foo::Bar", "Foo::Bar(A, B, C)")
-      assert_parse("Foo::bar", "Foo.bar(A, B, C)")
-      assert_parse("Foo::Bar::bar", "Foo::Bar.bar(A, B, C)")
-      assert_parse("F", "F = 10")
-      assert_parse("FOO", "FOO = FOO")
-      assert_parse("F::F::F", "F::F::F = FOO")
-      assert_parse("::Foo", "::Foo = FOO")
-    end
-  end
-
-  class ExpVisitorTest < Minitest::Test
-    extend T::Sig
-    include ParserTestHelper
-
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_string(string)
-      ExpBuilder.parse(string)
-    end
-
-    # Tests
-
-    def test_parse_error
-      assert_nil(parse_string(""))
-      assert_nil(parse_string(";"))
-    end
-
-    def test_parse_literals
-      assert_identical("0")
-      assert_identical("\"foo\"")
-      assert_identical("nil")
-      assert_identical("-10")
-      assert_parse("10.*(10)", "10 * 10")
-      assert_parse("\"foo\"", "'foo'")
-    end
-
-    def test_parse_names
-      assert_identical("_")
-      assert_identical("a")
-      assert_identical("A")
-      assert_identical("foo")
-      assert_identical("Foo")
-      assert_identical("foo10")
-      assert_identical("Foo10")
-      assert_identical("_foo")
-      assert_identical("_Foo")
-    end
-
-    def test_parse_qnames
-      assert_identical("A::A")
-      assert_identical("Foo::Foo")
-      assert_identical("Foo10::Foo10")
-    end
-
-    def test_parse_qsends
-      assert_parse("_._", "_::_")
-      assert_parse("a.a", "a::a")
-      assert_parse("Foo.foo", "Foo::foo")
-      assert_parse("foo.foo", "foo::foo")
-      assert_parse("foo10.foo10", "foo10::foo10")
-      assert_parse("_foo._foo", "_foo::_foo")
-      assert_parse("_Foo._Foo", "_Foo::_Foo")
-      assert_parse("_.a::A::Foo.foo._foo._Foo10", "_::a::A::Foo::foo::_foo::_Foo10")
-    end
-
-    def test_parse_indexes
-      assert_identical("Foo[A, B, C]")
-      assert_identical("Foo::Bar[A, B, C]")
-      assert_identical("Foo(A, B, C)")
-      assert_identical("Foo.Bar(A, B, C)")
-      assert_identical("Foo.bar(A, B, C)")
-      assert_identical("Foo::Bar.bar(A, B, C)")
-    end
-
-    def test_parse_cbase
-      assert_identical("::A")
-      assert_identical("::A::Foo::FOO")
-      assert_identical("::Foo.a")
-      assert_identical("::Foo.foo.bar")
-      assert_identical("::Foo.foo(A, B, C)")
-      assert_parse("::Foo.a", "::Foo::a")
-      assert_parse("::Foo.foo.bar(A, B, C)", "::Foo::foo.bar(A, B, C)")
-    end
-  end
-
-  class SigBuilderTest < Minitest::Test
-    extend T::Sig
-
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_sig(string)
-      SigBuilder.parse(string)&.to_rbi
-    end
-
-    sig { params(exp: String, string: String).void }
-    def assert_parse(exp, string)
-      assert_equal(exp, parse_sig(string))
-    end
-
-    sig { params(string: String).void }
-    def assert_parse_identical(string)
-      assert_parse(string, string)
-    end
-
-    # Tests
-
-    def test_parse_empty
-      assert_nil(SigBuilder.parse(""))
-    end
-
-    def test_parse_empty_sig
-      assert_parse_identical("sig {}\n")
+      assert_identical(rbi)
     end
   end
 end
