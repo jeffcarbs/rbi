@@ -4,39 +4,14 @@
 require "test_helper"
 
 class RBI
-  module ParserTestHelper
-    extend T::Sig
-
-    sig { params(string: String).returns(T.nilable(String)) }
-    def parse_string(string)
-      RBI.from_string(string).to_rbi
-    end
-
-    private
-
-    sig { params(string: String).returns(T.nilable(AST::Node)) }
-    def parse_internal(string)
-      Parser.parse_string(string)
-    end
-
-    sig { params(exp: String, string: String).void }
-    def assert_parse(exp, string)
-      T.unsafe(self).assert_equal(exp, parse_string(string))
-    end
-
-    sig { params(string: String).void }
-    def assert_identical(string)
-      assert_parse(string, string)
-    end
-  end
-
   class NameVisitorTest < Minitest::Test
+    include TestHelper
     extend T::Sig
-    include ParserTestHelper
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_string(string)
-      NameVisitor.visit(parse_internal(string))
+      node = Parser.parse_string(string)
+      NameVisitor.visit(node)
     end
 
     def test_parse_error
@@ -47,56 +22,56 @@ class RBI
     end
 
     def test_parse_names
-      assert_identical("_")
-      assert_identical("a")
-      assert_identical("A")
-      assert_identical("foo")
-      assert_identical("Foo")
-      assert_identical("foo10")
-      assert_identical("Foo10")
-      assert_identical("_foo")
-      assert_identical("_Foo")
+      assert_rbi_same("_")
+      assert_rbi_same("a")
+      assert_rbi_same("A")
+      assert_rbi_same("foo")
+      assert_rbi_same("Foo")
+      assert_rbi_same("foo10")
+      assert_rbi_same("Foo10")
+      assert_rbi_same("_foo")
+      assert_rbi_same("_Foo")
     end
 
     def test_parse_qnames
-      assert_identical("_::_")
-      assert_identical("a::a")
-      assert_identical("A::A")
-      assert_identical("foo::foo")
-      assert_identical("Foo::Foo")
-      assert_identical("foo10::foo10")
-      assert_identical("Foo10::Foo10")
-      assert_identical("_foo::_foo")
-      assert_identical("_Foo::_Foo")
-      assert_identical("_::a::A::Foo::foo::_foo::_Foo10")
-      assert_identical("::A")
-      assert_identical("::A::Foo::FOO")
-      assert_identical("::Foo::a")
-      assert_identical("::Foo::foo")
-      assert_parse("::Foo::foo::bar", "::Foo::foo.bar")
+      assert_rbi_same("_::_")
+      assert_rbi_same("a::a")
+      assert_rbi_same("A::A")
+      assert_rbi_same("foo::foo")
+      assert_rbi_same("Foo::Foo")
+      assert_rbi_same("foo10::foo10")
+      assert_rbi_same("Foo10::Foo10")
+      assert_rbi_same("_foo::_foo")
+      assert_rbi_same("_Foo::_Foo")
+      assert_rbi_same("_::a::A::Foo::foo::_foo::_Foo10")
+      assert_rbi_same("::A")
+      assert_rbi_same("::A::Foo::FOO")
+      assert_rbi_same("::Foo::a")
+      assert_rbi_same("::Foo::foo")
+      assert_rbi_equals("::Foo::foo::bar", "::Foo::foo.bar")
     end
 
     def test_parse_only_names
-      assert_parse("Foo", "Foo[A, B, C]")
-      assert_parse("Foo::Bar", "Foo::Bar[A, B, C]")
-      assert_parse("Foo", "Foo(A, B, C)")
-      assert_parse("Foo::Bar", "Foo::Bar(A, B, C)")
-      assert_parse("Foo::bar", "Foo.bar(A, B, C)")
-      assert_parse("Foo::Bar::bar", "Foo::Bar.bar(A, B, C)")
-      assert_parse("F", "F = 10")
-      assert_parse("FOO", "FOO = FOO")
-      assert_parse("F::F::F", "F::F::F = FOO")
-      assert_parse("::Foo", "::Foo = FOO")
+      assert_rbi_equals("Foo", "Foo[A, B, C]")
+      assert_rbi_equals("Foo::Bar", "Foo::Bar[A, B, C]")
+      assert_rbi_equals("Foo", "Foo(A, B, C)")
+      assert_rbi_equals("Foo::Bar", "Foo::Bar(A, B, C)")
+      assert_rbi_equals("Foo::bar", "Foo.bar(A, B, C)")
+      assert_rbi_equals("Foo::Bar::bar", "Foo::Bar.bar(A, B, C)")
+      assert_rbi_equals("F", "F = 10")
+      assert_rbi_equals("FOO", "FOO = FOO")
+      assert_rbi_equals("F::F::F", "F::F::F = FOO")
+      assert_rbi_equals("::Foo", "::Foo = FOO")
     end
   end
 
   class ExpVisitorTest < Minitest::Test
+    include TestHelper
     extend T::Sig
-    include ParserTestHelper
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_string(string)
-      ExpBuilder.parse(string)
+      ExpBuilder.visit(Parser.parse_string(string))
     end
 
     def test_parse_error
@@ -105,60 +80,60 @@ class RBI
     end
 
     def test_parse_literals
-      assert_identical("0")
-      assert_identical("\"foo\"")
-      assert_identical("nil")
-      assert_identical("-10")
-      assert_parse("10.*(10)", "10 * 10")
-      assert_parse("\"foo\"", "'foo'")
+      assert_rbi_same("0")
+      assert_rbi_same("\"foo\"")
+      assert_rbi_same("nil")
+      assert_rbi_same("-10")
+      assert_rbi_equals("10.*(10)", "10 * 10")
+      assert_rbi_equals("\"foo\"", "'foo'")
     end
 
     def test_parse_names
-      assert_identical("_")
-      assert_identical("a")
-      assert_identical("A")
-      assert_identical("foo")
-      assert_identical("Foo")
-      assert_identical("foo10")
-      assert_identical("Foo10")
-      assert_identical("_foo")
-      assert_identical("_Foo")
+      assert_rbi_same("_")
+      assert_rbi_same("a")
+      assert_rbi_same("A")
+      assert_rbi_same("foo")
+      assert_rbi_same("Foo")
+      assert_rbi_same("foo10")
+      assert_rbi_same("Foo10")
+      assert_rbi_same("_foo")
+      assert_rbi_same("_Foo")
     end
 
     def test_parse_qnames
-      assert_identical("A::A")
-      assert_identical("Foo::Foo")
-      assert_identical("Foo10::Foo10")
-      assert_identical("::A")
-      assert_identical("::A::Foo::FOO")
+      assert_rbi_same("A::A")
+      assert_rbi_same("Foo::Foo")
+      assert_rbi_same("Foo10::Foo10")
+      assert_rbi_same("::A")
+      assert_rbi_same("::A::Foo::FOO")
     end
 
     def test_parse_qsends
-      assert_identical("::Foo.a")
-      assert_identical("::Foo.foo.bar")
-      assert_identical("::Foo.foo(A, B, C)")
-      assert_identical("Foo[A, B, C]")
-      assert_identical("Foo::Bar[A, B, C]")
-      assert_identical("Foo(A, B, C)")
-      assert_identical("Foo.Bar(A, B, C)")
-      assert_identical("Foo.bar(A, B, C)")
-      assert_identical("Foo::Bar.bar(A, B, C)")
-      assert_parse("_._", "_::_")
-      assert_parse("a.a", "a::a")
-      assert_parse("Foo.foo", "Foo::foo")
-      assert_parse("foo.foo", "foo::foo")
-      assert_parse("foo10.foo10", "foo10::foo10")
-      assert_parse("_foo._foo", "_foo::_foo")
-      assert_parse("_Foo._Foo", "_Foo::_Foo")
-      assert_parse("_.a::A::Foo.foo._foo._Foo10", "_::a::A::Foo::foo::_foo::_Foo10")
-      assert_parse("::Foo.a", "::Foo::a")
-      assert_parse("::Foo.foo.bar(A, B, C)", "::Foo::foo.bar(A, B, C)")
+      assert_rbi_same("::Foo.a")
+      assert_rbi_same("::Foo.foo.bar")
+      assert_rbi_same("::Foo.foo(A, B, C)")
+      assert_rbi_same("Foo[A, B, C]")
+      assert_rbi_same("Foo::Bar[A, B, C]")
+      assert_rbi_same("Foo(A, B, C)")
+      assert_rbi_same("Foo.Bar(A, B, C)")
+      assert_rbi_same("Foo.bar(A, B, C)")
+      assert_rbi_same("Foo::Bar.bar(A, B, C)")
+      assert_rbi_equals("_._", "_::_")
+      assert_rbi_equals("a.a", "a::a")
+      assert_rbi_equals("Foo.foo", "Foo::foo")
+      assert_rbi_equals("foo.foo", "foo::foo")
+      assert_rbi_equals("foo10.foo10", "foo10::foo10")
+      assert_rbi_equals("_foo._foo", "_foo::_foo")
+      assert_rbi_equals("_Foo._Foo", "_Foo::_Foo")
+      assert_rbi_equals("_.a::A::Foo.foo._foo._Foo10", "_::a::A::Foo::foo::_foo::_Foo10")
+      assert_rbi_equals("::Foo.a", "::Foo::a")
+      assert_rbi_equals("::Foo.foo.bar(A, B, C)", "::Foo::foo.bar(A, B, C)")
     end
   end
 
   class SigBuilderTest < Minitest::Test
+    include TestHelper
     extend T::Sig
-    include ParserTestHelper
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_string(string)
@@ -170,16 +145,16 @@ class RBI
     end
 
     def test_parse_empty_sig
-      assert_identical("sig {}\n")
+      assert_rbi_same("sig {}\n")
     end
   end
 
   class ParserTest < Minitest::Test
+    include TestHelper
     extend T::Sig
-    include ParserTestHelper
 
     def test_parse_empty
-      assert_identical("")
+      assert_rbi_same("")
     end
 
     def test_scopes_nesting
@@ -201,7 +176,7 @@ class RBI
           module M2; end
         end
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
 
     def test_scopes_body
@@ -215,7 +190,7 @@ class RBI
           sealed!
         end
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
 
     def test_parse_modules
@@ -236,7 +211,7 @@ class RBI
         module A::B::C; end
         module A::B; end
       RBI
-      assert_parse(exp, rbi)
+      assert_rbi_equals(exp, rbi)
     end
 
     def test_parse_classes
@@ -257,7 +232,7 @@ class RBI
         class A::B::C < A; end
         class A::B; end
       RBI
-      assert_parse(exp, rbi)
+      assert_rbi_equals(exp, rbi)
     end
 
     def test_parse_consts
@@ -268,7 +243,7 @@ class RBI
         C::C = foo
         ::C::C = foo
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
 
     def test_parse_methods
@@ -278,7 +253,7 @@ class RBI
         def foo(p1, p2 = "foo", *p3); end
         def foo(p1:, p2: "foo", **p3); end
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
 
     def test_parse_calls
@@ -293,7 +268,7 @@ class RBI
         attr_reader :a
         attr_accessor :a, :b
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
 
     def test_parse_sigs
@@ -318,7 +293,7 @@ class RBI
         sig { returns(T.nilable(String)) }
         def foo; end
       RBI
-      assert_identical(rbi)
+      assert_rbi_same(rbi)
     end
   end
 end

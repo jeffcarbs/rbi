@@ -108,15 +108,8 @@ class RBI
   class ExpBuilder < SExpVisitor
     extend T::Sig
 
-    sig { params(string: String).returns(T.nilable(String)) }
-    def self.parse(string)
-      node = Parser.parse_string(string)
-      return nil unless node
-      build(node)
-    end
-
-    sig { params(node: AST::Node).returns(T.nilable(String)) }
-    def self.build(node)
+    sig { params(node: T.nilable(AST::Node)).returns(T.nilable(String)) }
+    def self.visit(node)
       v = ExpBuilder.new
       v.visit(node)
       out = v.out.string
@@ -224,11 +217,11 @@ class RBI
       when :void
         @current << Returns.new("void")
       when :returns
-        @current << Returns.new(ExpBuilder.build(node.children[2]))
+        @current << Returns.new(ExpBuilder.visit(node.children[2]))
       when :params
         @current << Params.new(node.children[2].children.map do |child|
           name = child.children[0].children[0].to_s
-          type = ExpBuilder.build(child.children[1])
+          type = ExpBuilder.visit(child.children[1])
           Param.new(name, type: type)
         end)
       when :abstract
@@ -287,7 +280,7 @@ class RBI
       scope = if node.type == :module
         Module.new(name)
       elsif node.type == :class
-        superclass = ExpBuilder.build(node.children[1]) if node.children[1]
+        superclass = ExpBuilder.visit(node.children[1]) if node.children[1]
         Class.new(name, superclass: superclass)
       else
         raise "Unsupported node #{node.type}"
@@ -308,7 +301,7 @@ class RBI
     def visit_const_assign(node)
       @current_scope << Const.new(
         T.must(NameVisitor.visit(node)),
-        value: ExpBuilder.build(node.children[2])
+        value: ExpBuilder.visit(node.children[2])
       )
     end
 
@@ -329,13 +322,13 @@ class RBI
       when :arg
         Arg.new(node.children[0].to_s)
       when :optarg
-        OptArg.new(node.children[0].to_s, value: ExpBuilder.build(node.children[1]))
+        OptArg.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
       when :restarg
         RestArg.new(node.children[0].to_s)
       when :kwarg
         KwArg.new(node.children[0].to_s)
       when :kwoptarg
-        KwOptArg.new(node.children[0].to_s, value: ExpBuilder.build(node.children[1]))
+        KwOptArg.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
       when :kwrestarg
         KwRestArg.new(node.children[0].to_s)
       when :blockarg
@@ -406,13 +399,13 @@ class RBI
     end
     def visit_prop(node, &block)
       name = node.children[2].children[0].to_s
-      type = ExpBuilder.build(node.children[3])
+      type = ExpBuilder.visit(node.children[3])
       has_default = node.children[4]
         &.children&.fetch(0, nil)
         &.children&.fetch(0, nil)
         &.children&.fetch(0, nil) == :default
       default_value = if has_default
-        ExpBuilder.build(node.children.fetch(4, nil)
+        ExpBuilder.visit(node.children.fetch(4, nil)
           &.children&.fetch(0, nil)
           &.children&.fetch(1, nil))
       end
