@@ -287,12 +287,12 @@ class RBI
     end
   end
 
-  class NameBuilderTest < Minitest::Test
+  class NameVisitorTest < Minitest::Test
     extend T::Sig
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_name(string)
-      NameBuilder.parse_string(string)
+      NameVisitor.visit(Parser.parse_string(string))
     end
 
     sig { params(exp: String, string: String).void }

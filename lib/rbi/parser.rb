@@ -55,19 +55,27 @@ class RBI
     end
   end
 
-  class NameBuilder
+  class SExpVisitor
+    extend T::Helpers
     extend T::Sig
 
-    sig { params(string: String).returns(T.nilable(String)) }
-    def self.parse_string(string)
-      node = Parser.parse_string(string)
-      return nil unless node
-      parse_node(node)
+    abstract!
+
+    sig { params(nodes: T::Array[AST::Node]).void }
+    def visit_all(nodes)
+      nodes.each { |node| visit(node) }
     end
 
-    sig { params(node: AST::Node).returns(T.nilable(String)) }
-    def self.parse_node(node)
-      v = NameBuilder.new
+    sig { abstract.params(node: T.nilable(AST::Node)).void }
+    def visit(node); end
+  end
+
+  class NameVisitor < SExpVisitor
+    extend T::Sig
+
+    sig { params(node: T.nilable(AST::Node)).returns(T.nilable(String)) }
+    def self.visit(node)
+      v = NameVisitor.new
       v.visit(node)
       return nil if v.names.empty?
       v.names.join("::")
@@ -78,10 +86,11 @@ class RBI
 
     sig { void }
     def initialize
+      super
       @names = T.let([], T::Array[String])
     end
 
-    sig { params(node: T.nilable(AST::Node)).void }
+    sig { override.params(node: T.nilable(AST::Node)).void }
     def visit(node)
       return unless node
       case node.type
@@ -96,7 +105,7 @@ class RBI
     end
   end
 
-  class ExpBuilder
+  class ExpBuilder < SExpVisitor
     extend T::Sig
 
     sig { params(string: String).returns(T.nilable(String)) }
@@ -120,10 +129,11 @@ class RBI
 
     sig { void }
     def initialize
+      super
       @out = T.let(StringIO.new, StringIO)
     end
 
-    sig { params(node: T.nilable(AST::Node)).void }
+    sig { override.params(node: T.nilable(AST::Node)).void }
     def visit(node)
       return unless node
       case node.type
@@ -170,7 +180,7 @@ class RBI
     end
   end
 
-  class SigBuilder
+  class SigBuilder < SExpVisitor
     extend T::Sig
 
     sig { params(string: String).returns(T.nilable(Sig)) }
@@ -193,15 +203,11 @@ class RBI
 
     sig { void }
     def initialize
+      super
       @current = T.let(Sig.new, Sig)
     end
 
-    sig { params(nodes: T::Array[AST::Node]).void }
-    def visit_all(nodes)
-      nodes.each { |node| visit(node) }
-    end
-
-    sig { params(node: T.nilable(AST::Node)).void }
+    sig { override.params(node: T.nilable(AST::Node)).void }
     def visit(node)
       return unless node
       case node.type
@@ -231,7 +237,7 @@ class RBI
     end
   end
 
-  class Builder
+  class Builder < SExpVisitor
     extend T::Sig
 
     sig { params(node: T.nilable(AST::Node)).returns(RBI) }
@@ -244,12 +250,13 @@ class RBI
 
     sig { params(root: Scope).void }
     def initialize(root)
+      super()
       @root = root
       @scopes_stack = T.let([root], T::Array[Scope])
       @current_scope = T.let(root, Scope)
     end
 
-    sig { params(node: T.nilable(Object)).void }
+    sig { override.params(node: T.nilable(Object)).void }
     def visit(node)
       return unless node.is_a?(AST::Node)
 
@@ -269,18 +276,13 @@ class RBI
       end
     end
 
-    sig { params(nodes: T::Array[AST::Node]).void }
-    def visit_all(nodes)
-      nodes.each { |node| visit(node) }
-    end
-
     private
 
     # Scopes
 
     sig { params(node: AST::Node).void }
     def visit_scope(node)
-      name = T.must(NameBuilder.parse_node(node.children[0]))
+      name = T.must(NameVisitor.visit(node.children[0]))
 
       scope = if node.type == :module
         Module.new(name)
@@ -305,7 +307,7 @@ class RBI
     sig { params(node: AST::Node).void }
     def visit_const_assign(node)
       @current_scope << Const.new(
-        T.must(NameBuilder.parse_node(node)),
+        T.must(NameVisitor.visit(node)),
         value: ExpBuilder.build(node.children[2])
       )
     end
@@ -360,13 +362,13 @@ class RBI
         attr = AttrAccessor.new(*symbols)
         @current_scope << attr
       when :include
-        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
+        names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
         @current_scope << Include.new(*names)
       when :extend
-        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
+        names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
         @current_scope << Extend.new(*names)
       when :prepend
-        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
+        names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
         @current_scope << Prepend.new(*names)
       when :abstract!
         @current_scope << Abstract.new
@@ -375,7 +377,7 @@ class RBI
       when :interface!
         @current_scope << Interface.new
       when :mixes_in_class_methods
-        names = node.children[2..-1].map { |child| NameBuilder.parse_node(child) }
+        names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
         @current_scope << MixesInClassDefs.new(*names)
       when :public
         @current_scope << Public.new
