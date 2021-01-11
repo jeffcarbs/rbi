@@ -10,8 +10,7 @@ class RBI
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_string(string)
-      node = Parser.parse_string(string)
-      NameVisitor.visit(node)
+      NameVisitor.visit(::Parser::CurrentRuby.parse(string))
     end
 
     def test_parse_error
@@ -71,7 +70,7 @@ class RBI
 
     sig { params(string: String).returns(T.nilable(String)) }
     def parse_string(string)
-      ExpBuilder.visit(Parser.parse_string(string))
+      ExpBuilder.visit(::Parser::CurrentRuby.parse(string))
     end
 
     def test_parse_error

@@ -8,7 +8,7 @@ module TestHelper
 
   sig { params(string: String).returns(T.nilable(String)) }
   def parse_string(string)
-    RBI.from_string(string).to_rbi
+    RBI.from_string(string)&.to_rbi
   end
 
   sig { params(exp: String, string: String).void }

@@ -32,7 +32,7 @@ class RBI
       files = T.unsafe(Parser).list_files(*paths)
       files.each do |file|
         content_before = File.read(file)
-        content_after = RBI.from_string(content_before).to_rbi
+        content_after = RBI.from_string(content_before)&.to_rbi
         ffile = "#{file}.f"
         File.write(ffile, content_after)
         system("diff -u #{file} #{ffile}")

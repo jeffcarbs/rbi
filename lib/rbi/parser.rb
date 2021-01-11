@@ -4,16 +4,14 @@
 class RBI
   extend T::Sig
 
-  sig { params(string: String).returns(RBI) }
+  sig { params(string: String).returns(T.nilable(RBI)) }
   def self.from_string(string)
-    node = Parser.parse_string(string)
-    Builder.build(node)
+    Parser.parse_rbi(string)
   end
 
-  sig { params(path: String).returns(RBI) }
+  sig { params(path: String).returns(T.nilable(RBI)) }
   def self.from_file(path)
-    node = Parser.parse_file(path)
-    Builder.build(node)
+    Parser.parse_file(path)
   end
 
   class Parser
@@ -42,16 +40,26 @@ class RBI
       files.uniq.sort
     end
 
-    sig { params(string: T.nilable(String)).returns(T.nilable(::AST::Node)) }
-    def self.parse_string(string)
-      return nil unless string
-      ::Parser::CurrentRuby.parse(string)
+    sig { params(node: T.nilable(AST::Node)).returns(T.nilable(RBI)) }
+    def self.parse_ast(node)
+      rbi = RBI.new
+      builder = Builder.new(rbi.root)
+      builder.visit(node)
+      rbi
     end
 
-    sig { params(path: T.nilable(String)).returns(T.nilable(::AST::Node)) }
+    sig { params(string: T.nilable(String)).returns(T.nilable(RBI)) }
+    def self.parse_rbi(string)
+      return nil unless string
+      node = ::Parser::CurrentRuby.parse(string)
+      parse_ast(node)
+    end
+
+    sig { params(path: T.nilable(String)).returns(T.nilable(RBI)) }
     def self.parse_file(path)
       return nil unless path
-      ::Parser::CurrentRuby.parse_file(path)
+      node = ::Parser::CurrentRuby.parse_file(path)
+      parse_ast(node)
     end
   end
 
@@ -178,13 +186,12 @@ class RBI
 
     sig { params(string: String).returns(T.nilable(Sig)) }
     def self.parse(string)
-      node = Parser.parse_string(string)
-      return nil unless node
-      build(node)
+      build(::Parser::CurrentRuby.parse(string))
     end
 
-    sig { params(node: AST::Node).returns(T.nilable(Sig)) }
+    sig { params(node: T.nilable(AST::Node)).returns(T.nilable(Sig)) }
     def self.build(node)
+      return nil unless node
       return nil unless node.type == :block && node.children[0].children[1] == :sig
       v = SigBuilder.new
       v.visit_all(node.children[2..-1])
@@ -232,14 +239,6 @@ class RBI
 
   class Builder < SExpVisitor
     extend T::Sig
-
-    sig { params(node: T.nilable(AST::Node)).returns(RBI) }
-    def self.build(node)
-      rbi = RBI.new
-      builder = Builder.new(rbi.root)
-      builder.visit(node)
-      rbi
-    end
 
     sig { params(root: Scope).void }
     def initialize(root)
