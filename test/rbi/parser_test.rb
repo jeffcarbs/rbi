@@ -265,37 +265,6 @@ class RBI
       assert_parse(exp, rbi)
     end
 
-    def test_parse_methods
-      rbi = <<~RBI
-        def foo; end
-
-        def self.foo()
-        end
-
-        def foo(x, *y, z:); end
-
-        def foo(
-          p1,
-          p2 = "foo",
-          *p3
-        ); end
-
-        def foo(
-          p1:,
-          p2: "foo",
-          **p3
-        ); end
-      RBI
-      exp = <<~RBI
-        def foo; end
-        def self.foo; end
-        def foo(x, *y, z:); end
-        def foo(p1, p2 = "foo", *p3); end
-        def foo(p1:, p2: "foo", **p3); end
-      RBI
-      assert_parse(exp, rbi)
-    end
-
     def test_parse_consts
       rbi = <<~RBI
         CONST2 = CONST1
@@ -303,6 +272,16 @@ class RBI
         C::C::C = C::C::C
         C::C = foo
         ::C::C = foo
+      RBI
+      assert_identical(rbi)
+    end
+
+    def test_parse_methods
+      rbi = <<~RBI
+        def foo; end
+        def foo(x, *y, z:); end
+        def foo(p1, p2 = "foo", *p3); end
+        def foo(p1:, p2: "foo", **p3); end
       RBI
       assert_identical(rbi)
     end
@@ -343,21 +322,6 @@ class RBI
 
         sig { returns(T.nilable(String)) }
         def foo; end
-      RBI
-      assert_identical(rbi)
-    end
-
-    def test_parse_tstruct
-      rbi = <<~RBI
-        class Foo < T::Struct
-          prop :foo, String
-          const :foo, String, default: "foo"
-
-          sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
-          def foo(a, b:); end
-
-          def foo; end
-        end
       RBI
       assert_identical(rbi)
     end

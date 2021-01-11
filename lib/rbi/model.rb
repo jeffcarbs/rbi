@@ -281,22 +281,14 @@ class RBI
 
     abstract!
 
-    sig { returns(T.nilable(String)) }
-    attr_reader :type
-
     sig { returns(T::Array[Sig]) }
     attr_reader :sigs
 
-    sig { params(kind: ::Symbol, names: T::Array[::Symbol], type: T.nilable(String)).void }
-    def initialize(kind, names, type: nil)
+    sig { params(kind: ::Symbol, names: T::Array[::Symbol]).void }
+    def initialize(kind, names)
       super(kind, names)
-      @type = type
       @sigs = T.let([], T::Array[Sig])
-      @sigs << default_sig if type
     end
-
-    sig { abstract.returns(Sig) }
-    def default_sig; end
 
     sig { returns(T::Array[String]) }
     def names
@@ -309,12 +301,8 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
-      super(:attr_reader, [name, *names], type: type)
-    end
-
-    sig { override.returns(Sig) }
-    def default_sig
-      Sig.new(returns: type)
+      super(:attr_reader, [name, *names])
+      @sigs << Sig.new(returns: type) if type
     end
   end
 
@@ -323,14 +311,10 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
-      super(:attr_writer, [name, *names], type: type)
-    end
-
-    sig { override.returns(Sig) }
-    def default_sig
-      Sig.new(params: [
-        Param.new(T.must(names.first&.to_s), type: type),
-      ], returns: "void")
+      super(:attr_writer, [name, *names])
+      @sigs << Sig.new(params: [
+        Param.new(T.must(self.names.first&.to_s), type: type),
+      ], returns: "void") if type
     end
   end
 
@@ -339,14 +323,10 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
     def initialize(name, *names, type: nil)
-      super(:attr_accessor, [name, *names], type: type)
-    end
-
-    sig { override.returns(Sig) }
-    def default_sig
-      Sig.new(params: [
-        Param.new(T.must(names.first&.to_s), type: type),
-      ], returns: type)
+      super(:attr_accessor, [name, *names])
+      @sigs << Sig.new(params: [
+        Param.new(T.must(self.names.first&.to_s), type: type),
+      ], returns: type) if type
     end
   end
 
