@@ -8,9 +8,8 @@ class RBI
 
     abstract!
 
-    sig { abtract.params(rbi: RBI).returns(RBI) }
+    sig { abstract.params(rbi: RBI).returns(RBI) }
     def rewrite(rbi); end
   end
 
-  class Flattern
 end
