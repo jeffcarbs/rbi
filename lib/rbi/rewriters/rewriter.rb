@@ -9,7 +9,6 @@ class RBI
     abstract!
 
     sig { abstract.params(rbi: RBI).returns(RBI) }
-    def rewrite(rbi); end
+    def rewriter(rbi); end
   end
-
 end

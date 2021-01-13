@@ -5,7 +5,7 @@ require "test_helper"
 
 class RBI
   class FlattenTest < Minitest::Test
-    extend TestHelper
+    # extend TestHelper
     extend T::Sig
 
     # def assert_rewrite(orig, exp = nil)

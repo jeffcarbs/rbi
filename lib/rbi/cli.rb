@@ -13,9 +13,14 @@ class RBI
     desc 'RBI', ''
     def rbi(*paths)
       paths << '.' if paths.empty?
+      puts "Listing files to parse..."
       files = T.unsafe(Parser).list_files(*paths)
-      rbis = files.map { |file| RBI.from_file(file) }
-      rbis.each { |rbi| print(rbi.to_rbi) }
+      puts "  #{files.size} to parse."
+      files.each_with_index do |file, index|
+        puts "  parsing #{file} (#{index}/#{files.size})"
+        RBI.from_file(file)
+      end
+      # rbis.each { |rbi| print(rbi.to_rbi) }
     end
 
     desc 'compile', ''

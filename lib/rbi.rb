@@ -13,6 +13,8 @@ end
 
 require 'rbi/model'
 require 'rbi/printer'
+require 'rbi/parser/base'
+require 'rbi/parser/whitequark'
 require 'rbi/parser'
 require 'rbi/version'
 require 'rbi/cli'
