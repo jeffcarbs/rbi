@@ -4,12 +4,14 @@
 class RBI
   extend T::Sig
 
+  ROOT_MODULE_NAME = "<root>"
+
   sig { returns(Module) }
   attr_reader :root
 
   sig { params(block: T.nilable(T.proc.params(scope: RBI).void)).void }
   def initialize(&block)
-    @root = T.let(Module.new("<root>"), Module)
+    @root = T.let(Module.new(ROOT_MODULE_NAME), Module)
     block&.call(self)
   end
 
@@ -25,29 +27,29 @@ class RBI
     abstract!
   end
 
-  class Begin < Node
-    extend T::Sig
-    extend Enumerable
-
-    sig { returns(T::Array[Node]) }
-    attr_reader :stmts
-
-    sig { void }
-    def initialize
-      super()
-      @stmts = T.let([], T::Array[Node])
-    end
-
-    sig { params(node: Node).void }
-    def <<(node)
-      @stmts << node
-    end
-
-    sig { params(block: T.proc.params(node: Node).returns(Node)).returns(T::Enumerable[Node]) }
-    def each(&block)
-      stmts.each { |stmt| block.call(stmt) }
-    end
-  end
+  # class Begin < Node
+  # extend T::Sig
+  # extend Enumerable
+  #
+  # sig { returns(T::Array[Node]) }
+  # attr_reader :stmts
+  #
+  # sig { void }
+  # def initialize
+  # super()
+  # @stmts = T.let([], T::Array[Node])
+  # end
+  #
+  # sig { params(node: Node).void }
+  # def <<(node)
+  # @stmts << node
+  # end
+  #
+  # sig { params(block: T.proc.params(node: Node).returns(Node)).returns(T::Enumerable[Node]) }
+  # def each(&block)
+  # stmts.each { |stmt| block.call(stmt) }
+  # end
+  # end
 
   # Scopes
 
@@ -65,7 +67,7 @@ class RBI
     abstract!
 
     sig { returns(String) }
-    attr_reader :name
+    attr_accessor :name
 
     sig { returns(T::Array[T.all(Node, InScope)]) }
     attr_reader :body
@@ -75,6 +77,11 @@ class RBI
       super()
       @name = name
       @body = T.let([], T::Array[T.all(Node, InScope)])
+    end
+
+    sig { returns(T::Boolean) }
+    def root?
+      @name == ROOT_MODULE_NAME
     end
 
     sig { params(node: T.all(Node, InScope)).void }

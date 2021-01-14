@@ -1,4 +1,4 @@
-# typed: strict
+# typed: ignore
 # frozen_string_literal: true
 
 class RBI
@@ -92,10 +92,10 @@ class RBI
           return nil unless obj
           raise "#{obj} is not a Begin node" unless obj["type"] == "Begin"
           # node = Begin.new
-          obj["stmts"].each do |stmt|
-            stmt = visit(stmt)
-            # node << stmt if stmt
-          end
+          # obj["stmts"].each do |stmt|
+          # stmt = visit(stmt)
+          # node << stmt if stmt
+          # end
         end
 
         def visit_const(obj)
@@ -126,15 +126,15 @@ class RBI
 
           # body = visit(obj["body"])
           # if body
-            # if body.is_a?(Begin)
-              # body.stmts.each do |stmt|
-                # raise "#{stmt} is not a InScope" unless stmt.is_a?(InScope)
-                # scope << stmt
-              # end
-            # else
-              # raise "#{body} is not a InScope" unless body.is_a?(InScope)
-              # scope << body
-            # end
+          # if body.is_a?(Begin)
+          # body.stmts.each do |stmt|
+          # raise "#{stmt} is not a InScope" unless stmt.is_a?(InScope)
+          # scope << stmt
+          # end
+          # else
+          # raise "#{body} is not a InScope" unless body.is_a?(InScope)
+          # scope << body
+          # end
           # end
 
           @scopes_stack << scope
@@ -190,8 +190,6 @@ class RBI
             @current_scope << Private.new
           when "sealed!"
             @current_scope << Sealed.new
-          else
-            # do nothing
           end
         end
 
@@ -210,10 +208,10 @@ class RBI
           when "Const", "ConstLhs"
             scope = obj["scope"]
             return obj["name"] unless scope
-            return "::#{obj["name"]}" if scope["type"] == "Cbase"
-            return "#{make_name(scope)}::#{obj["name"]}"
+            return "::#{obj['name']}" if scope["type"] == "Cbase"
+            "#{make_name(scope)}::#{obj['name']}"
           when "Symbol"
-            return obj["val"]
+            obj["val"]
           else
             raise "Can't make name from #{obj}"
           end
@@ -363,7 +361,7 @@ class RBI
               end
               @out << "]"
             when "Hash"
-              puts node
+              # puts node
               @out << "{"
               node["pairs"].each_with_index do |child, index|
                 @out << ", " if index > 0
@@ -373,7 +371,7 @@ class RBI
               end
               @out << "}"
             when "String"
-              @out << "\"#{node["val"]}\""
+              @out << "\"#{node['val']}\""
             when "Symbol"
               @out << node["val"].to_sym
             when "Integer", "Float"

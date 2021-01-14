@@ -1,4 +1,4 @@
-# typed: strict
+# typed: ignore
 # frozen_string_literal: true
 
 class RBI
@@ -25,7 +25,7 @@ class RBI
 
     def pretty_print
       @index.each do |key, values|
-        puts "#{key}: #{values.join(", ")}"
+        puts "#{key}: #{values.join(', ')}"
       end
     end
   end
@@ -97,13 +97,13 @@ class RBI
     end
 
     def visit_send(node)
-      @index["#{current_namespace}.#{node.method}(#{node.args.join(", ")})"] << node
+      @index["#{current_namespace}.#{node.method}(#{node.args.join(', ')})"] << node
     end
   end
 
   def merge(other)
     v = Rewriter::Merge.new
-    # TODO index
+    # TODO: index
     # TODO merge defs by keys and warn
     # TODO sort
     v.merge(self)
@@ -113,16 +113,16 @@ class RBI
 
   def flatten
     v = Rewriter::Flatten.new
-    # TODO index
+    # TODO: index
     # TODO merge defs by keys and warn
     # TODO sort
-    # v.flatten(self)
+    v.flatten(self)
     v.rbi
   end
 
   def hierarchize
     rbi = RBI.new
-    # TODO index
+    # TODO: index
     # TODO merge defs by keys and warn
     # TODO visit namespaces
     # TODO sort
@@ -146,28 +146,16 @@ class RBI
 
       def initialize
         @rbi = RBI.new
-        @scopes = {}
         @scopes_stack = [rbi.root]
+        @root_scope = rbi.root
+        @current_scope = nil
       end
 
-      def merge(rbi)
+      def flatten(rbi)
         visit(rbi.root)
       end
 
       private
-
-      def current_scope
-        @scopes_stack.last
-      end
-
-      def root_scope?
-        @scopes_stack.size == 1
-      end
-
-      def parent_scope
-        return nil if root_scope?
-        @scopes_stack[-2]
-      end
 
       def visit(node)
         case node
@@ -185,12 +173,24 @@ class RBI
       end
 
       def visit_scope(scope)
+        if scope.root?
+          visit_all(scope.body)
+          @root_scope.body.concat(scope.body)
+          return
+        end
         @scopes_stack << scope
         visit_all(scope.body)
         @scopes_stack.pop
+        @root_scope << scope
+        @scopes_stack.last.body.delete(scope)
+        scope.name = "#{current_namespace}::#{scope.name}" unless scope.name.start_with?("::")
       end
 
       def visit_body(body)
+      end
+
+      def current_namespace
+        @scopes_stack[1..-1].map(&:name).prepend("").join("::")
       end
     end
 
@@ -242,7 +242,7 @@ class RBI
     end
   end
 
-  # TODO add sigs
+  # TODO: add sigs
   # TODO add doc
   # TODO split? extract?
   # TODO template sig
@@ -250,12 +250,12 @@ class RBI
   # TODO checkers
 
   # class Rewriter
-    # extend T::Sig
-    # extend T::Helpers
-#
-    # abstract!
-#
-    # sig { abstract.params(rbi: RBI).returns(RBI) }
-    # def rewriter(rbi); end
+  # extend T::Sig
+  # extend T::Helpers
+  #
+  # abstract!
+  #
+  # sig { abstract.params(rbi: RBI).returns(RBI) }
+  # def rewriter(rbi); end
   # end
 end

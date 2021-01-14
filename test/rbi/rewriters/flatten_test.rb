@@ -9,28 +9,28 @@ class RBI
     extend T::Sig
 
     # def assert_rewrite(orig, exp = nil)
-      # rbi = parse_string(orig)
-      # out = Flatten.new.rewrite(rbi)
-      # if exp
-        # assert_equal(exp, rbi)
-      # else
-        # assert_equal(orig, rbi)
-      # end
+    # rbi = parse_string(orig)
+    # out = Flatten.new.rewrite(rbi)
+    # if exp
+    # assert_equal(exp, rbi)
+    # else
+    # assert_equal(orig, rbi)
     # end
-#
-    # def test_flatten_empty
-#
-      # rbi = <<~RBI
-      # class Foo
-#
-      # RBI
     # end
-#
+    #
     # def test_flatten_empty
-      # rbi = <<~RBI
-      # class Foo
-#
-      # RBI
+    #
+    # rbi = <<~RBI
+    # class Foo
+    #
+    # RBI
+    # end
+    #
+    # def test_flatten_empty
+    # rbi = <<~RBI
+    # class Foo
+    #
+    # RBI
     # end
   end
 end
