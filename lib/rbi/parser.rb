@@ -35,12 +35,12 @@ class RBI
         files.uniq.sort
       end
 
-      sig { params(string: T.nilable(String), parser: Parser).returns(T.nilable(RBI)) }
+      sig { params(string: String, parser: Parser).returns(T.nilable(RBI)) }
       def parse_string(string, parser: Whitequark.new)
         parser.parse_string(string)
       end
 
-      sig { params(path: T.nilable(String), parser: Parser).returns(T.nilable(RBI)) }
+      sig { params(path: String, parser: Parser).returns(T.nilable(RBI)) }
       def parse_file(path, parser: Whitequark.new)
         parser.parse_file(path)
       end

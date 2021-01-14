@@ -8,10 +8,10 @@ class RBI
 
     interface!
 
-    sig { abstract.params(string: T.nilable(String)).returns(T.nilable(RBI)) }
+    sig { abstract.params(string: String).returns(T.nilable(RBI)) }
     def parse_string(string); end
 
-    sig { abstract.params(path: T.nilable(String)).returns(T.nilable(RBI)) }
+    sig { abstract.params(path: String).returns(T.nilable(RBI)) }
     def parse_file(path); end
   end
 end

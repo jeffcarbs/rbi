@@ -13,16 +13,14 @@ class RBI
       ::Parser::Builders::Default.emit_encoding = true
       ::Parser::Builders::Default.emit_index    = true
 
-      sig { override.params(string: T.nilable(String)).returns(T.nilable(RBI)) }
+      sig { override.params(string: String).returns(T.nilable(RBI)) }
       def parse_string(string)
-        return nil unless string
         node = ::Parser::CurrentRuby.parse(string)
         parse_ast(node)
       end
 
-      sig { override.params(path: T.nilable(String)).returns(T.nilable(RBI)) }
+      sig { override.params(path: String).returns(T.nilable(RBI)) }
       def parse_file(path)
-        return nil unless path
         node = ::Parser::CurrentRuby.parse_file(path)
         parse_ast(node)
       end
