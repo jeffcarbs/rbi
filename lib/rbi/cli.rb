@@ -45,6 +45,24 @@ class RBI
       end
     end
 
+    desc 'merge', ''
+    def merge(path1, path2, *paths)
+      rbi = RBI.from_file(path1)
+      [path2, *paths].each do |file|
+        rbi.index.pretty_print
+        rbi = rbi.merge(RBI.from_file(file))
+      end
+      puts rbi.to_rbi
+    end
+
+    desc 'flatten', ''
+    def flatten(path, *paths)
+      files = [path, *paths]
+      files.each do |file|
+        puts RBI.from_file(file).flatten.to_rbi
+      end
+    end
+
     desc '--version', 'Show version'
     def __print_version
       puts "RBI v#{RBI::VERSION}"

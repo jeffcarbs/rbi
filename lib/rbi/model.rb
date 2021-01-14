@@ -25,6 +25,30 @@ class RBI
     abstract!
   end
 
+  class Begin < Node
+    extend T::Sig
+    extend Enumerable
+
+    sig { returns(T::Array[Node]) }
+    attr_reader :stmts
+
+    sig { void }
+    def initialize
+      super()
+      @stmts = T.let([], T::Array[Node])
+    end
+
+    sig { params(node: Node).void }
+    def <<(node)
+      @stmts << node
+    end
+
+    sig { params(block: T.proc.params(node: Node).returns(Node)).returns(T::Enumerable[Node]) }
+    def each(&block)
+      stmts.each { |stmt| block.call(stmt) }
+    end
+  end
+
   # Scopes
 
   module InScope

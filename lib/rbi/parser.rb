@@ -5,12 +5,12 @@ class RBI
   extend T::Sig
 
   sig { params(string: String, parser: Parser).returns(T.nilable(RBI)) }
-  def self.from_string(string, parser: Parser::Whitequark.new)
+  def self.from_string(string, parser: Parser::Sorbet.new)
     Parser.parse_string(string, parser: parser)
   end
 
   sig { params(path: String, parser: Parser).returns(T.nilable(RBI)) }
-  def self.from_file(path, parser: Parser::Whitequark.new)
+  def self.from_file(path, parser: Parser::Sorbet.new)
     Parser.parse_file(path, parser: parser)
   end
 
@@ -36,12 +36,12 @@ class RBI
       end
 
       sig { params(string: String, parser: Parser).returns(T.nilable(RBI)) }
-      def parse_string(string, parser: Whitequark.new)
+      def parse_string(string, parser: Sorbet.new)
         parser.parse_string(string)
       end
 
       sig { params(path: String, parser: Parser).returns(T.nilable(RBI)) }
-      def parse_file(path, parser: Whitequark.new)
+      def parse_file(path, parser: Sorbet.new)
         parser.parse_file(path)
       end
     end

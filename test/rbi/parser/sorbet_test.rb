@@ -108,6 +108,7 @@ class RBI
             def self.foo(x, *y, z:, &block); end
             def foo(p1, p2 = "foo", *p3); end
             def foo(p1:, p2: T.unsafe(Foo), **p3); end
+            def foo(x = 12, y = 1.1, z = nil, a = [1, 2, 3], b = {a: "", b: []}); end
           RBI
           assert_rbi_same(rbi)
         end
