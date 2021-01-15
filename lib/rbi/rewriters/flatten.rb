@@ -39,10 +39,6 @@ class RBI
           visit_scope(node)
         when Const
           visit_const(node)
-        when Stmt
-          # nothing
-        else
-          raise "Unhandled #{node}"
         end
       end
 
