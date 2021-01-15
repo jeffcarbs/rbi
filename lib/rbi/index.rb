@@ -20,12 +20,14 @@ class RBI
       @index = T.let({}, T::Hash[String, T::Array[Node]])
     end
 
-    sig { params(namespace: String).returns(T::Array[Node]) }
-    def [](namespace)
-      @index[namespace] ||= []
+    sig { params(id: String).returns(T::Array[Node]) }
+    def [](id)
+      @index[id] ||= []
     end
 
+    sig { params(node: Node).void }
     def <<(node)
+      self[id_for(node)] << node
     end
 
     sig { params(block: T.proc.params(pair: [String, T::Array[Node]]).void).void }
@@ -36,6 +38,22 @@ class RBI
     sig { returns(T::Boolean) }
     def empty?
       @index.empty?
+    end
+
+    sig { params(node: Node).returns(String) }
+    def id_for(node)
+      case node
+      when Scope
+        node.qualified_name
+      when Const
+        node.qualified_name
+      when Def
+        node.qualified_name
+      when Send
+        node.qualified_name
+      else
+        raise "Can't create id for #{node}"
+      end
     end
 
     sig { returns(String) }
@@ -72,29 +90,13 @@ class RBI
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
-        id = case node
+        case node
         when Scope
-          @scopes_stack << node
+          @index << node unless node.root?
           visit_all(node.body)
-          @scopes_stack.pop
-          if node.name.start_with?("::")
-            node.name
-          elsif !node.root?
-            "#{current_namespace}::#{node.name}"
-          end
-        when Const
-          "#{current_namespace}.#{node.name}"
-        when Def
-          "#{current_namespace}#{node.is_singleton ? '::' : '#' }#{node.name}"
-        when Send
-          "#{current_namespace}.#{node.method}(#{node.args.join(', ')})"
+        when Const, Def, Send
+          @index << node
         end
-        @index[id] << node if id
-      end
-
-      sig { returns(String) }
-      def current_namespace
-        T.must(@scopes_stack[1..-1]).map(&:name).prepend("").join("::")
       end
     end
   end

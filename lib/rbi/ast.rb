@@ -4,14 +4,12 @@
 class RBI
   extend T::Sig
 
-  ROOT_MODULE_NAME = "<root>"
-
-  sig { returns(Module) }
+  sig { returns(CBase) }
   attr_reader :root
 
   sig { params(block: T.nilable(T.proc.params(scope: RBI).void)).void }
   def initialize(&block)
-    @root = T.let(Module.new(ROOT_MODULE_NAME), Module)
+    @root = T.let(CBase.new, CBase)
     block&.call(self)
   end
 
@@ -57,6 +55,14 @@ class RBI
     extend T::Helpers
 
     abstract!
+
+    sig { returns(T.nilable(Scope)) }
+    attr_accessor :parent_scope
+
+    sig { void }
+    def initialize
+      @parent_scope = T.let(nil, T.nilable(Scope))
+    end
   end
 
   class Scope < Stmt
@@ -80,12 +86,19 @@ class RBI
 
     sig { returns(T::Boolean) }
     def root?
-      @name == ROOT_MODULE_NAME
+      false
     end
 
-    sig { params(node: T.all(Node, Stmt)).void }
+    sig { params(node: Stmt).void }
     def <<(node)
+      node.parent_scope = self
       @body << node
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      return name if name.start_with?("::")
+      "#{parent_scope&.qualified_name}::#{name}"
     end
   end
 
@@ -152,6 +165,25 @@ class RBI
     end
   end
 
+  class CBase < Class
+    extend T::Sig
+
+    sig { void }
+    def initialize
+      super("<cbase>", superclass: nil)
+    end
+
+    sig { returns(T::Boolean) }
+    def root?
+      true
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      ""
+    end
+  end
+
   # Consts
 
   class Const < Stmt
@@ -168,6 +200,12 @@ class RBI
       super()
       @name = name
       @value = value
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      return name if name.start_with?("::")
+      "#{parent_scope&.qualified_name}::#{name}"
     end
   end
 
@@ -212,6 +250,11 @@ class RBI
     sig { returns(Sig) }
     def default_sig
       Sig.new(params: params.empty? ? nil : params, returns: return_type)
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      "#{parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
     end
   end
 
@@ -297,6 +340,11 @@ class RBI
       super()
       @method = method
       @args = args
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      "#{parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
     end
   end
 

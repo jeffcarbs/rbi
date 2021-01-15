@@ -15,9 +15,6 @@ class RBI
     class Sort < Base
       extend T::Sig
 
-      sig { returns(RBI) }
-      attr_reader :rbi
-
       sig { void }
       def initialize
         super
@@ -37,10 +34,11 @@ class RBI
         node.body.sort! do |a, b|
           res = kind_rank(a) <=> kind_rank(b)
           res = node_name(a) <=> node_name(b) if res == 0
-          res
+          res || 0
         end
       end
 
+      sig { params(node: Node).returns(Integer) }
       def kind_rank(node)
         case node
         when Include, Prepend, Extend
@@ -51,9 +49,12 @@ class RBI
           2
         when Def
           3
+        else
+          4
         end
       end
 
+      sig { params(node: Node).returns(T.nilable(String)) }
       def node_name(node)
         case node
         when Scope

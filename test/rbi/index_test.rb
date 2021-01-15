@@ -34,6 +34,7 @@ class RBI
         end
       RBI
 
+      index.pretty_print
       assert_equal(["A", "::A"], index["::A"].map(&:name))
       assert_equal(["B"], index["::A::B"].map(&:name))
       assert_equal(["B"], index["::B"].map(&:name))
