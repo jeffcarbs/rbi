@@ -5,32 +5,126 @@ require "test_helper"
 
 class RBI
   class FlattenTest < Minitest::Test
-    # extend TestHelper
     extend T::Sig
 
-    # def assert_rewrite(orig, exp = nil)
-    # rbi = parse_string(orig)
-    # out = Flatten.new.rewrite(rbi)
-    # if exp
-    # assert_equal(exp, rbi)
-    # else
-    # assert_equal(orig, rbi)
-    # end
-    # end
-    #
-    # def test_flatten_empty
-    #
-    # rbi = <<~RBI
-    # class Foo
-    #
-    # RBI
-    # end
-    #
-    # def test_flatten_empty
-    # rbi = <<~RBI
-    # class Foo
-    #
-    # RBI
-    # end
+    def test_flatten_empty
+      assert_flatten_equal("", "")
+    end
+
+    def test_flatten_scopes_empty
+      rbi = <<~RBI
+        class Foo; end
+        module Bar; end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        class ::Foo; end
+        module ::Bar; end
+      EXP
+    end
+
+    def test_flatten_scopes_nested
+      rbi = <<~RBI
+        class Foo
+          module Bar
+            class Baz; end
+          end
+        end
+
+        module Bar
+          class Baz; end
+        end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        class ::Foo::Bar::Baz; end
+        module ::Foo::Bar; end
+        class ::Foo; end
+        module ::Bar; end
+      EXP
+    end
+
+    def test_flatten_scopes_keep_body
+      rbi = <<~RBI
+        class Foo
+          module Bar
+            def foo; end
+          end
+
+          attr_reader :bar
+        end
+
+        module Bar
+          extend T::Sig
+        end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        module ::Foo::Bar
+          def foo; end
+        end
+
+        class ::Foo
+          attr_reader :bar
+        end
+
+        module ::Bar
+          extend T::Sig
+        end
+      EXP
+    end
+
+    def test_flatten_scopes_keep_cbase
+      rbi = <<~RBI
+        class Foo
+          module Bar
+            class ::Baz; end
+          end
+        end
+
+        module ::Bar
+          class ::Baz; end
+        end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        class ::Baz; end
+        module ::Foo::Bar; end
+        class ::Baz; end
+        class ::Foo; end
+        module ::Bar; end
+      EXP
+    end
+
+    def test_flatten_scopes_move_constants
+      rbi = <<~RBI
+        class Foo
+          module Bar
+            BAR = 10
+          end
+
+          FOO = Foo::Bar
+        end
+
+        module Bar
+          BAR = "Bar"
+        end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        ::Foo::Bar::BAR = 10
+        module ::Foo::Bar; end
+        ::Bar::BAR = \"Bar\"
+
+        class ::Foo
+          FOO = Foo::Bar
+        end
+
+        module ::Bar; end
+      EXP
+    end
+
+    private
+
+    sig { params(exp: String, rbi: String).void }
+    def assert_flatten_equal(exp, rbi)
+      res = RBI.from_string(rbi).flatten
+      assert_equal(exp, res.to_rbi)
+    end
   end
 end

@@ -38,6 +38,10 @@ class RBI
         case node
         when Scope
           visit_scope(node)
+        when Const
+          visit_const(node)
+        when InScope
+          # nothing
         else
           raise "Unhandled #{node}"
         end
@@ -58,6 +62,12 @@ class RBI
         scope.name = "#{current_namespace}::#{scope.name}" unless scope.name.start_with?("::")
       end
 
+      sig { params(const: Const).void }
+      def visit_const(const)
+        @root_scope << const
+        T.must(@scopes_stack.last).body.delete(const)
+        const.name = "#{current_namespace}::#{const.name}" unless const.name.start_with?("::")
+      end
       sig { returns(String) }
       def current_namespace
         T.must(@scopes_stack[1..-1]).map(&:name).prepend("").join("::")

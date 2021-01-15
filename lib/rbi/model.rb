@@ -115,7 +115,7 @@ class RBI
     extend T::Sig
 
     sig { returns(T.nilable(String)) }
-    attr_reader :superclass
+    attr_accessor :superclass
 
     sig do
       params(
@@ -160,10 +160,10 @@ class RBI
     include InScope
 
     sig { returns(String) }
-    attr_reader :name
+    attr_accessor :name
 
     sig { returns(T.nilable(String)) }
-    attr_reader :value
+    attr_accessor :value
 
     sig { params(name: String, value: T.nilable(String)).void }
     def initialize(name, value: nil)
@@ -180,7 +180,7 @@ class RBI
     include InScope
 
     sig { returns(String) }
-    attr_reader :name
+    attr_accessor :name
 
     sig { returns(T::Boolean) }
     attr_reader :is_singleton
