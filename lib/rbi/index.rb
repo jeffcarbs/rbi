@@ -13,6 +13,7 @@ class RBI
 
   class Index
     extend T::Sig
+    include T::Enumerable
 
     sig { void }
     def initialize
@@ -22,6 +23,14 @@ class RBI
     sig { params(namespace: String).returns(T::Array[Node]) }
     def [](namespace)
       @index[namespace] ||= []
+    end
+
+    def <<(node)
+    end
+
+    sig { params(block: T.proc.params(pair: [String, T::Array[Node]]).void).void }
+    def each(&block)
+      @index.each(&block)
     end
 
     sig { returns(T::Boolean) }

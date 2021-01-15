@@ -8,12 +8,12 @@ class RBI
     extend T::Sig
 
     def test_index_empty
-      index = RBI.from_string("").index
+      index = parse_index("")
       assert(index.empty?)
     end
 
     def test_index_nodes
-      index = RBI.from_string(<<~RBI).index
+      index = parse_index(<<~RBI)
         class A
           extend T::Helpers
           extend T::Sig
@@ -39,6 +39,13 @@ class RBI
       assert_equal(["B"], index["::B"].map(&:name))
       assert_equal(["foo"], index["::A::B#foo"].map(&:name))
       assert_equal([[:foo]], index["::A::B.attr_reader(foo)"].map(&:names))
+    end
+
+    private
+
+    sig { params(rbi: String).returns(T.untyped) }
+    def parse_index(rbi)
+      T.must(RBI.from_string(rbi)).index
     end
   end
 end

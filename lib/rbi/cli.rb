@@ -22,14 +22,13 @@ class RBI
     # end
     # # rbis.each { |rbi| print(rbi.to_rbi) }
     # end
-    #
-    # desc 'compile', ''
-    # def compile(*paths)
-    # paths << '.' if paths.empty?
-    # files = T.unsafe(Parser).list_files(*paths)
-    # files.map { |file| RBI.from_file(file) }
-    # puts "Compiled correctly. Good job!"
-    # end
+
+    desc 'validate', ''
+    def validate(*paths)
+      paths << '.' if paths.empty?
+      files = T.unsafe(Parser).list_files(*paths)
+      files.map { |file| T.must(RBI.from_file(file)).validate_duplicates }
+    end
 
     # desc 'format', ''
     # def format(*paths)

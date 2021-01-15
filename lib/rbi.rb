@@ -14,15 +14,21 @@ class RBI
 end
 
 require 'rbi/ast'
-require 'rbi/visitor'
 
+require 'rbi/visitor'
 require 'rbi/index'
+require 'rbi/printer'
+
 require 'rbi/parser/base'
 require 'rbi/parser/whitequark'
 require 'rbi/parser/sorbet'
 require 'rbi/parser'
-require 'rbi/printer'
+
 require 'rbi/rewriters/base'
+require 'rbi/rewriters/collect_sigs'
 require 'rbi/rewriters/flatten'
+require 'rbi/rewriters/sort'
+
+require 'rbi/validators/duplicates'
 require 'rbi/version'
 require 'rbi/cli'
