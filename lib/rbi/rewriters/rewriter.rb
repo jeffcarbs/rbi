@@ -111,15 +111,6 @@ class RBI
     v.rbi
   end
 
-  def flatten
-    v = Rewriter::Flatten.new
-    # TODO: index
-    # TODO merge defs by keys and warn
-    # TODO sort
-    v.flatten(self)
-    v.rbi
-  end
-
   def hierarchize
     rbi = RBI.new
     # TODO: index
@@ -141,59 +132,6 @@ class RBI
   end
 
   module Rewriter
-    class Flatten
-      attr_reader :rbi
-
-      def initialize
-        @rbi = RBI.new
-        @scopes_stack = [rbi.root]
-        @root_scope = rbi.root
-        @current_scope = nil
-      end
-
-      def flatten(rbi)
-        visit(rbi.root)
-      end
-
-      private
-
-      def visit(node)
-        case node
-        when Scope
-          visit_scope(node)
-        when Stmt
-          visit_body(node)
-        else
-          raise "Unhandled #{node}"
-        end
-      end
-
-      def visit_all(nodes)
-        nodes.each { |node| visit(node) }
-      end
-
-      def visit_scope(scope)
-        if scope.root?
-          visit_all(scope.body)
-          @root_scope.body.concat(scope.body)
-          return
-        end
-        @scopes_stack << scope
-        visit_all(scope.body)
-        @scopes_stack.pop
-        @root_scope << scope
-        @scopes_stack.last.body.delete(scope)
-        scope.name = "#{current_namespace}::#{scope.name}" unless scope.name.start_with?("::")
-      end
-
-      def visit_body(body)
-      end
-
-      def current_namespace
-        @scopes_stack[1..-1].map(&:name).prepend("").join("::")
-      end
-    end
-
     class Merge
       attr_reader :rbi
 
@@ -232,13 +170,6 @@ class RBI
 
       def visit_body(body)
       end
-    end
-  end
-
-  class FlattenVisitor
-    attr_reader :rbi
-
-    def initialize(rbi)
     end
   end
 

@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class RBI
-  module Rewriters
+  module Validators
     class Base < Visitor
       extend T::Helpers
 

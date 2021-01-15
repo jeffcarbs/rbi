@@ -6,12 +6,12 @@ class RBI
 
   sig { returns(RBI) }
   def flatten
-    v = Rewriter::Flatten.new
+    v = Rewriters::Flatten.new
     v.flatten(self)
     v.rbi
   end
 
-  module Rewriter
+  module Rewriters
     class Flatten < Base
       extend T::Sig
 
