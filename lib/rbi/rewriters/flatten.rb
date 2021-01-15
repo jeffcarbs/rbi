@@ -35,31 +35,16 @@ class RBI
       def visit(node)
         case node
         when CBase
-          visit_cbase(node)
+          visit_all(node.body.dup)
+          @rbi.root.body.concat(node.body)
         when Scope
-          visit_scope(node)
+          visit_all(node.body.dup)
+          node.name = node.qualified_name
+          @rbi.root << node
         when Const
-          visit_const(node)
+          node.name = node.qualified_name
+          @rbi.root << node
         end
-      end
-
-      sig { params(scope: CBase).void }
-      def visit_cbase(scope)
-        visit_all(scope.body.dup)
-        @rbi.root.body.concat(scope.body)
-      end
-
-      sig { params(scope: Scope).void }
-      def visit_scope(scope)
-        visit_all(scope.body.dup)
-        scope.name = scope.qualified_name
-        @rbi.root << scope
-      end
-
-      sig { params(const: Const).void }
-      def visit_const(const)
-        const.name = const.qualified_name
-        @rbi.root << const
       end
     end
   end
