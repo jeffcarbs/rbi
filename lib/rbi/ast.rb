@@ -53,16 +53,15 @@ class RBI
 
   # Scopes
 
-  module Stmt
+  class Stmt < Node
     extend T::Helpers
 
-    interface!
+    abstract!
   end
 
-  class Scope < Node
+  class Scope < Stmt
     extend T::Sig
     extend T::Helpers
-    include Stmt
 
     abstract!
 
@@ -155,9 +154,8 @@ class RBI
 
   # Consts
 
-  class Const < Node
+  class Const < Stmt
     extend T::Sig
-    include Stmt
 
     sig { returns(String) }
     attr_accessor :name
@@ -175,9 +173,8 @@ class RBI
 
   # Defs
 
-  class Def < Node
+  class Def < Stmt
     extend T::Sig
-    include Stmt
 
     sig { returns(String) }
     attr_accessor :name
@@ -283,10 +280,9 @@ class RBI
 
   # Sends
 
-  class Send < Node
+  class Send < Stmt
     extend T::Sig
     extend T::Helpers
-    include Stmt
 
     abstract!
 
@@ -484,48 +480,35 @@ class RBI
 
   # Sigs
 
-  class Sig < Node
+  class Sig < Stmt
     extend T::Sig
-    include Stmt
 
-    sig { returns(T::Array[T.all(Node, InSig)]) }
+    sig { returns(T::Array[SigBuilder]) }
     attr_reader :body
 
     sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String)).void }
     def initialize(is_abstract: false, params: nil, returns: nil)
       super()
-      @body = T.let([], T::Array[T.all(Node, InSig)])
+      @body = T.let([], T::Array[SigBuilder])
       @body << SAbstract.new if is_abstract
       @body << Params.new(params) if params
       @body << Returns.new(returns) if returns
     end
 
-    sig { params(node: T.all(Node, InSig)).void }
+    sig { params(node: SigBuilder).void }
     def <<(node)
       @body << node
     end
   end
 
-  module InSig
+  class SigBuilder < Node
     extend T::Helpers
-
-    interface!
-  end
-
-  class SigModifier < Node
-    extend T::Helpers
-    include InSig
 
     abstract!
   end
 
-  class SAbstract < SigModifier
-    include InSig
-  end
-
-  class Returns < SigModifier
+  class Returns < SigBuilder
     extend T::Sig
-    include InSig
 
     sig { returns(T.nilable(String)) }
     attr_reader :type
@@ -541,9 +524,8 @@ class RBI
     end
   end
 
-  class Params < SigModifier
+  class Params < SigBuilder
     extend T::Sig
-    include InSig
 
     sig { returns(T::Array[Param]) }
     attr_reader :params
@@ -557,5 +539,9 @@ class RBI
       super()
       @params = params
     end
+  end
+
+  class SAbstract < SigBuilder
+    extend T::Sig
   end
 end

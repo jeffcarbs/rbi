@@ -71,6 +71,7 @@ class RBI
         T.must(@scopes_stack[1..-1]).map(&:name).prepend("").join("::")
       end
 
+      sig { params(node: Stmt).void }
       def move_node(node)
         @rbi << node
         T.must(@scopes_stack.last).body.delete(node)

@@ -124,8 +124,8 @@ class RBI
 
     sig { params(exp: String, rbi: String).void }
     def assert_flatten_equal(exp, rbi)
-      res = RBI.from_string(rbi).flatten
-      assert_equal(exp, res.to_rbi)
+      res = RBI.from_string(rbi)&.flatten
+      assert_equal(exp, res&.to_rbi)
     end
   end
 end

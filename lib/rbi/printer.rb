@@ -349,7 +349,6 @@ class RBI
 
   class SAbstract
     extend T::Sig
-    include InSig
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
@@ -359,7 +358,6 @@ class RBI
 
   class Returns
     extend T::Sig
-    include InSig
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
@@ -369,7 +367,6 @@ class RBI
 
   class Params
     extend T::Sig
-    include InSig
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
