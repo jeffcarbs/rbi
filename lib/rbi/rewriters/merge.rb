@@ -12,6 +12,15 @@ class RBI
     v.rbi
   end
 
+  class Scope
+    extend T::Sig
+
+    sig { params(other: Scope).void }
+    def merge(other)
+      concat(other.body)
+    end
+  end
+
   module Rewriters
     class Merge < Base
       extend T::Sig
@@ -37,10 +46,15 @@ class RBI
       def visit(node)
         case node
         when Scope
-          @index << node unless node.is_a?(CBase)
-          visit_all(node.body)
-        when Const, Def, Send
-          @index << node
+          first = @index[@index.id_for(node)].first
+          body = node.body.dup
+          if first.is_a?(Scope)
+            first.concat(node.body)
+          else
+            @index << node
+            @rbi.root << node if node.parent_scope.is_a?(CBase)
+          end
+          visit_all(body.dup)
         end
       end
     end

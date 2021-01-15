@@ -36,7 +36,7 @@ class RBI
         case node
         when CBase
           visit_all(node.body.dup)
-          @rbi.root.body.concat(node.body)
+          @rbi.root.concat(node.body)
         when Scope
           visit_all(node.body.dup)
           node.name = node.qualified_name

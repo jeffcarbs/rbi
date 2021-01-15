@@ -60,7 +60,7 @@ class RBI
         when Scope, Const, Def
           node.name
         when Send
-          "#{node.method}(#{node.args.join(",")})"
+          "#{node.method}(#{node.args.join(',')})"
         end
       end
     end

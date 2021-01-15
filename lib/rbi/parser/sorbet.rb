@@ -94,7 +94,7 @@ class RBI
           # node = Begin.new
           obj["stmts"].each do |stmt|
             visit(stmt)
-          # node << stmt if stmt
+            # node << stmt if stmt
           end
         end
 

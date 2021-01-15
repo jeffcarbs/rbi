@@ -27,6 +27,7 @@ require 'rbi/parser'
 require 'rbi/rewriters/base'
 require 'rbi/rewriters/collect_sigs'
 require 'rbi/rewriters/flatten'
+require 'rbi/rewriters/merge'
 require 'rbi/rewriters/sort'
 
 require 'rbi/validators/duplicates'

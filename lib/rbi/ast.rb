@@ -18,6 +18,11 @@ class RBI
     @root << node
   end
 
+  sig { params(nodes: T::Array[Stmt]).void }
+  def concat(nodes)
+    nodes.each { |node| self << node }
+  end
+
   class Node
     extend T::Sig
     extend T::Helpers
@@ -61,6 +66,7 @@ class RBI
 
     sig { void }
     def initialize
+      super()
       @parent_scope = T.let(nil, T.nilable(Scope))
     end
   end
@@ -91,10 +97,20 @@ class RBI
       @body << node
     end
 
+    sig { params(nodes: T::Array[Stmt]).void }
+    def concat(nodes)
+      nodes.each { |node| self << node }
+    end
+
     sig { returns(String) }
     def qualified_name
       return name if name.start_with?("::")
       "#{parent_scope&.qualified_name}::#{name}"
+    end
+
+    sig { returns(String) }
+    def to_s
+      name
     end
   end
 
@@ -173,6 +189,11 @@ class RBI
     def qualified_name
       ""
     end
+
+    sig { returns(String) }
+    def to_s
+      "::"
+    end
   end
 
   # Consts
@@ -197,6 +218,11 @@ class RBI
     def qualified_name
       return name if name.start_with?("::")
       "#{parent_scope&.qualified_name}::#{name}"
+    end
+
+    sig { returns(String) }
+    def to_s
+      name
     end
   end
 
@@ -247,6 +273,11 @@ class RBI
     def qualified_name
       "#{parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
     end
+
+    sig { returns(String) }
+    def to_s
+      name
+    end
   end
 
   # Params
@@ -273,6 +304,11 @@ class RBI
       super()
       @name = name
       @type = type
+    end
+
+    sig { returns(String) }
+    def to_s
+      name
     end
   end
 
@@ -336,6 +372,11 @@ class RBI
     sig { returns(String) }
     def qualified_name
       "#{parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
+    end
+
+    sig { returns(String) }
+    def to_s
+      method.to_s
     end
   end
 
@@ -537,6 +578,11 @@ class RBI
     sig { params(node: SigBuilder).void }
     def <<(node)
       @body << node
+    end
+
+    sig { returns(String) }
+    def to_s
+      "sig"
     end
   end
 

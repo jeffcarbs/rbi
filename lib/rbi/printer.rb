@@ -36,6 +36,7 @@ class RBI
       out: $stdout,
       default_indent: 0
     )
+      super()
       @current_indent = default_indent
       @out = out
     end
