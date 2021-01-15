@@ -37,6 +37,7 @@ class RBI
       assert_flatten_equal(<<~EXP, rbi)
         class ::Foo::Bar::Baz; end
         module ::Foo::Bar; end
+        class ::Bar::Baz; end
         class ::Foo; end
         module ::Bar; end
       EXP

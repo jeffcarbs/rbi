@@ -23,7 +23,6 @@ class RBI
         super
         @rbi = T.let(RBI.new, RBI)
         @scopes_stack = T.let([rbi.root], T::Array[Scope])
-        @root_scope = T.let(rbi.root, Module)
       end
 
       sig { params(rbi: RBI).void }
@@ -51,26 +50,30 @@ class RBI
       def visit_scope(scope)
         if scope.root?
           visit_all(scope.body)
-          @root_scope.body.concat(scope.body)
+          @rbi.root.body.concat(scope.body)
           return
         end
         @scopes_stack << scope
         visit_all(scope.body)
+        scope.name = current_namespace unless scope.name.start_with?("::")
         @scopes_stack.pop
-        @root_scope << scope
-        T.must(@scopes_stack.last).body.delete(scope)
-        scope.name = "#{current_namespace}::#{scope.name}" unless scope.name.start_with?("::")
+        move_node(scope)
       end
 
       sig { params(const: Const).void }
       def visit_const(const)
-        @root_scope << const
-        T.must(@scopes_stack.last).body.delete(const)
         const.name = "#{current_namespace}::#{const.name}" unless const.name.start_with?("::")
+        move_node(const)
       end
+
       sig { returns(String) }
       def current_namespace
         T.must(@scopes_stack[1..-1]).map(&:name).prepend("").join("::")
+      end
+
+      def move_node(node)
+        @rbi << node
+        T.must(@scopes_stack.last).body.delete(node)
       end
     end
   end
