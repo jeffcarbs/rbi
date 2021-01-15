@@ -23,7 +23,7 @@ class RBI
     out.string
   end
 
-  class Printer
+  class Printer < Visitor
     extend T::Sig
 
     sig do
@@ -75,15 +75,10 @@ class RBI
       printn(string)
     end
 
-    sig { params(node: T.nilable(Node)).void }
+    sig { override.params(node: T.nilable(Node)).void }
     def visit(node)
       return unless node
       node.accept_printer(self)
-    end
-
-    sig { params(nodes: T::Array[Node]).void }
-    def visit_all(nodes)
-      nodes.each { |node| visit(node) }
     end
 
     sig { params(nodes: T::Array[Node]).void }

@@ -14,6 +14,8 @@ class RBI
 end
 
 require 'rbi/ast'
+require 'rbi/visitor'
+
 require 'rbi/printer'
 require 'rbi/parser/base'
 require 'rbi/parser/whitequark'
