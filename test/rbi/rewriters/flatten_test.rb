@@ -37,8 +37,8 @@ class RBI
       assert_flatten_equal(<<~EXP, rbi)
         class ::Foo::Bar::Baz; end
         module ::Foo::Bar; end
-        class ::Bar::Baz; end
         class ::Foo; end
+        class ::Bar::Baz; end
         module ::Bar; end
       EXP
     end
@@ -56,6 +56,8 @@ class RBI
         module Bar
           extend T::Sig
         end
+
+        def foo; end
       RBI
       assert_flatten_equal(<<~EXP, rbi)
         module ::Foo::Bar
@@ -69,6 +71,8 @@ class RBI
         module ::Bar
           extend T::Sig
         end
+
+        def foo; end
       EXP
     end
 
@@ -87,8 +91,8 @@ class RBI
       assert_flatten_equal(<<~EXP, rbi)
         class ::Baz; end
         module ::Foo::Bar; end
-        class ::Baz; end
         class ::Foo; end
+        class ::Baz; end
         module ::Bar; end
       EXP
     end
@@ -110,12 +114,9 @@ class RBI
       assert_flatten_equal(<<~EXP, rbi)
         ::Foo::Bar::BAR = 10
         module ::Foo::Bar; end
+        ::Foo::FOO = Foo::Bar
+        class ::Foo; end
         ::Bar::BAR = \"Bar\"
-
-        class ::Foo
-          FOO = Foo::Bar
-        end
-
         module ::Bar; end
       EXP
     end

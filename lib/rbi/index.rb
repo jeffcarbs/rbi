@@ -78,7 +78,6 @@ class RBI
       def initialize
         super
         @index = T.let(Index.new, Index)
-        @scopes_stack = T.let([], T::Array[Scope])
       end
 
       sig { params(rbi: RBI).void }
@@ -92,7 +91,7 @@ class RBI
       def visit(node)
         case node
         when Scope
-          @index << node unless node.root?
+          @index << node unless node.is_a?(CBase)
           visit_all(node.body)
         when Const, Def, Send
           @index << node

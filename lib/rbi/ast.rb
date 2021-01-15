@@ -74,23 +74,19 @@ class RBI
     sig { returns(String) }
     attr_accessor :name
 
-    sig { returns(T::Array[T.all(Node, Stmt)]) }
+    sig { returns(T::Array[Stmt]) }
     attr_reader :body
 
     sig { params(name: String).void }
     def initialize(name)
       super()
       @name = name
-      @body = T.let([], T::Array[T.all(Node, Stmt)])
-    end
-
-    sig { returns(T::Boolean) }
-    def root?
-      false
+      @body = T.let([], T::Array[Stmt])
     end
 
     sig { params(node: Stmt).void }
     def <<(node)
+      raise if node.parent_scope && !node.parent_scope&.body&.delete(node)
       node.parent_scope = self
       @body << node
     end
@@ -171,11 +167,6 @@ class RBI
     sig { void }
     def initialize
       super("<cbase>", superclass: nil)
-    end
-
-    sig { returns(T::Boolean) }
-    def root?
-      true
     end
 
     sig { returns(String) }

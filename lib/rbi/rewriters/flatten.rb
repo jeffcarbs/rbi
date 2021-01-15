@@ -22,7 +22,6 @@ class RBI
       def initialize
         super
         @rbi = T.let(RBI.new, RBI)
-        @scopes_stack = T.let([rbi.root], T::Array[Scope])
       end
 
       sig { params(rbi: RBI).void }
@@ -35,6 +34,8 @@ class RBI
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
         case node
+        when CBase
+          visit_cbase(node)
         when Scope
           visit_scope(node)
         when Const
@@ -42,35 +43,23 @@ class RBI
         end
       end
 
+      sig { params(scope: CBase).void }
+      def visit_cbase(scope)
+        visit_all(scope.body.dup)
+        @rbi.root.body.concat(scope.body)
+      end
+
       sig { params(scope: Scope).void }
       def visit_scope(scope)
-        if scope.root?
-          visit_all(scope.body)
-          @rbi.root.body.concat(scope.body)
-          return
-        end
-        @scopes_stack << scope
-        visit_all(scope.body)
-        scope.name = current_namespace unless scope.name.start_with?("::")
-        @scopes_stack.pop
-        move_node(scope)
+        visit_all(scope.body.dup)
+        scope.name = scope.qualified_name
+        @rbi.root << scope
       end
 
       sig { params(const: Const).void }
       def visit_const(const)
-        const.name = "#{current_namespace}::#{const.name}" unless const.name.start_with?("::")
-        move_node(const)
-      end
-
-      sig { returns(String) }
-      def current_namespace
-        T.must(@scopes_stack[1..-1]).map(&:name).prepend("").join("::")
-      end
-
-      sig { params(node: Stmt).void }
-      def move_node(node)
-        @rbi << node
-        T.must(@scopes_stack.last).body.delete(node)
+        const.name = const.qualified_name
+        @rbi.root << const
       end
     end
   end
