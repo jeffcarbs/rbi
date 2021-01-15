@@ -13,7 +13,7 @@ class RBI
   class Error < StandardError; end
 end
 
-require 'rbi/model'
+require 'rbi/ast'
 require 'rbi/printer'
 require 'rbi/parser/base'
 require 'rbi/parser/whitequark'

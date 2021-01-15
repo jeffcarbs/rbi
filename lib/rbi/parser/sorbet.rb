@@ -92,10 +92,10 @@ class RBI
           return nil unless obj
           raise "#{obj} is not a Begin node" unless obj["type"] == "Begin"
           # node = Begin.new
-          # obj["stmts"].each do |stmt|
-          # stmt = visit(stmt)
+          obj["stmts"].each do |stmt|
+            visit(stmt)
           # node << stmt if stmt
-          # end
+          end
         end
 
         def visit_const(obj)
