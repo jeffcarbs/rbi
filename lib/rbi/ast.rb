@@ -15,7 +15,7 @@ class RBI
     block&.call(self)
   end
 
-  sig { params(node: T.all(Node, InScope)).void }
+  sig { params(node: T.all(Node, Stmt)).void }
   def <<(node)
     @root << node
   end
@@ -53,7 +53,7 @@ class RBI
 
   # Scopes
 
-  module InScope
+  module Stmt
     extend T::Helpers
 
     interface!
@@ -62,21 +62,21 @@ class RBI
   class Scope < Node
     extend T::Sig
     extend T::Helpers
-    include InScope
+    include Stmt
 
     abstract!
 
     sig { returns(String) }
     attr_accessor :name
 
-    sig { returns(T::Array[T.all(Node, InScope)]) }
+    sig { returns(T::Array[T.all(Node, Stmt)]) }
     attr_reader :body
 
     sig { params(name: String).void }
     def initialize(name)
       super()
       @name = name
-      @body = T.let([], T::Array[T.all(Node, InScope)])
+      @body = T.let([], T::Array[T.all(Node, Stmt)])
     end
 
     sig { returns(T::Boolean) }
@@ -84,7 +84,7 @@ class RBI
       @name == ROOT_MODULE_NAME
     end
 
-    sig { params(node: T.all(Node, InScope)).void }
+    sig { params(node: T.all(Node, Stmt)).void }
     def <<(node)
       @body << node
     end
@@ -157,7 +157,7 @@ class RBI
 
   class Const < Node
     extend T::Sig
-    include InScope
+    include Stmt
 
     sig { returns(String) }
     attr_accessor :name
@@ -177,7 +177,7 @@ class RBI
 
   class Def < Node
     extend T::Sig
-    include InScope
+    include Stmt
 
     sig { returns(String) }
     attr_accessor :name
@@ -286,7 +286,7 @@ class RBI
   class Send < Node
     extend T::Sig
     extend T::Helpers
-    include InScope
+    include Stmt
 
     abstract!
 
@@ -486,7 +486,7 @@ class RBI
 
   class Sig < Node
     extend T::Sig
-    include InScope
+    include Stmt
 
     sig { returns(T::Array[T.all(Node, InSig)]) }
     attr_reader :body

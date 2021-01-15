@@ -128,11 +128,11 @@ class RBI
           # if body
           # if body.is_a?(Begin)
           # body.stmts.each do |stmt|
-          # raise "#{stmt} is not a InScope" unless stmt.is_a?(InScope)
+          # raise "#{stmt} is not a Stmt" unless stmt.is_a?(Stmt)
           # scope << stmt
           # end
           # else
-          # raise "#{body} is not a InScope" unless body.is_a?(InScope)
+          # raise "#{body} is not a Stmt" unless body.is_a?(Stmt)
           # scope << body
           # end
           # end

@@ -161,7 +161,7 @@ class RBI
         case node
         when Scope
           visit_scope(node)
-        when InScope
+        when Stmt
           visit_body(node)
         else
           raise "Unhandled #{node}"
@@ -213,7 +213,7 @@ class RBI
         case node
         when Scope
           visit_scope(node)
-        when InScope
+        when Stmt
           visit_body(node)
         else
           raise "Unhandled #{node}"
