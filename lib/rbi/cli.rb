@@ -22,6 +22,14 @@ class RBI
       rbis.each { |rbi| rbi.validate_duplicates }
     end
 
+    desc 'format', ''
+    def format(path, *paths)
+      paths = [path, *paths]
+      files = T.unsafe(Parser).list_files(*paths)
+      rbis = parse(files)
+      rbis.each { |rbi| puts rbi.to_rbi }
+    end
+
     desc 'flatten', ''
     def flatten(path, *paths)
       paths = [path, *paths]
@@ -50,8 +58,10 @@ class RBI
 
       def parse(files)
         logger = self.logger
+        index = 0
         files.map do |file|
-          logger.debug("Parsing #{file}")
+          logger.debug("Parsing #{file} (#{index}/#{files.size})")
+          index += 1
           T.must(RBI.from_file(file))
         end
       end

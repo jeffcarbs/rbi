@@ -19,15 +19,14 @@ class RBI
     end
 
     def test_scope_nested
-      rbi = RBI.new do |m|
-        m << Module.new("M0") do |m0|
-          m0 << Module.new("M1") do |m1|
-            m1 << Module.new("M11")
-            m1 << Module.new("M12")
-          end
-          m0 << Module.new("M2")
-        end
-      end
+      rbi = RBI.new
+      m0 = Module.new("M0")
+      m1 = Module.new("M1")
+      m1 << Module.new("M11")
+      m1 << Module.new("M12")
+      m0 << m1
+      m0 << Module.new("M2")
+      rbi << m0
 
       assert_equal(<<~RBI, rbi.to_rbi)
         module M0
@@ -60,6 +59,19 @@ class RBI
         class C < A
           abstract!
           sealed!
+        end
+      RBI
+    end
+
+    def test_singleton
+      rbi = RBI.new
+      c0 = Class.new("C0")
+      c0 << SClass.new
+      rbi << c0
+
+      assert_equal(<<~RBI, rbi.to_rbi)
+        class C0
+          class << self; end
         end
       RBI
     end

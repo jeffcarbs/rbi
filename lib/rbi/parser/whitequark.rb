@@ -79,6 +79,8 @@ class RBI
             @names << node.children[1].to_s
           when :index
             visit(node.children[0])
+          when :self
+            names << "self"
           when :cbase
             names << ""
           end
@@ -145,6 +147,8 @@ class RBI
             @out << node.children[0]
           when :nil
             @out << "nil"
+          when :self
+            @out << "self"
           when :cbase
             @out << ""
           else
@@ -224,9 +228,8 @@ class RBI
         sig { override.params(node: T.nilable(Object)).void }
         def visit(node)
           return unless node.is_a?(AST::Node)
-
           case node.type
-          when :module, :class
+          when :module, :class, :sclass
             visit_scope(node)
           when :def, :defs
             visit_def(node)
@@ -249,11 +252,14 @@ class RBI
         def visit_scope(node)
           name = T.must(NameVisitor.visit(node.children[0]))
 
-          scope = if node.type == :module
+          scope = case node.type
+          when :module
             Module.new(name)
-          elsif node.type == :class
+          when :class
             superclass = ExpBuilder.visit(node.children[1]) if node.children[1]
             Class.new(name, superclass: superclass)
+          when :sclass
+            SClass.new
           else
             raise "Unsupported node #{node.type}"
           end

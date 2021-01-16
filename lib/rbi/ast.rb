@@ -7,10 +7,9 @@ class RBI
   sig { returns(CBase) }
   attr_reader :root
 
-  sig { params(block: T.nilable(T.proc.params(scope: RBI).void)).void }
-  def initialize(&block)
+  sig { void }
+  def initialize
     @root = T.let(CBase.new, CBase)
-    block&.call(self)
   end
 
   sig { params(node: T.all(Node, Stmt)).void }
@@ -37,30 +36,6 @@ class RBI
       @loc = loc
     end
   end
-
-  # class Begin < Node
-  # extend T::Sig
-  # extend Enumerable
-  #
-  # sig { returns(T::Array[Node]) }
-  # attr_reader :stmts
-  #
-  # sig { void }
-  # def initialize
-  # super()
-  # @stmts = T.let([], T::Array[Node])
-  # end
-  #
-  # sig { params(node: Node).void }
-  # def <<(node)
-  # @stmts << node
-  # end
-  #
-  # sig { params(block: T.proc.params(node: Node).returns(Node)).returns(T::Enumerable[Node]) }
-  # def each(&block)
-  # stmts.each { |stmt| block.call(stmt) }
-  # end
-  # end
 
   # Scopes
 
@@ -125,10 +100,9 @@ class RBI
   class Module < Scope
     extend T::Sig
 
-    sig { params(name: String, loc: T.nilable(Loc), block: T.nilable(T.proc.params(scope: Module).void)).void }
-    def initialize(name, loc: nil, &block)
+    sig { params(name: String, loc: T.nilable(Loc)).void }
+    def initialize(name, loc: nil)
       super(name, loc: loc)
-      block&.call(self)
     end
 
     sig { returns(T.self_type) }
@@ -154,13 +128,42 @@ class RBI
         name: String,
         superclass: T.nilable(String),
         loc: T.nilable(Loc),
-        block: T.nilable(T.proc.params(scope: Class).void),
       ).void
     end
-    def initialize(name, superclass: nil, loc: nil, &block)
+    def initialize(name, superclass: nil, loc: nil)
       super(name, loc: loc)
       @superclass = superclass
-      block&.call(self)
+    end
+
+    sig { returns(T.self_type) }
+    def abstract!
+      body << Abstract.new
+      self
+    end
+
+    sig { returns(T::Boolean) }
+    def abstract?
+      body.one? { |child| child.is_a?(Abstract) }
+    end
+
+    sig { returns(T.self_type) }
+    def sealed!
+      body << Sealed.new
+      self
+    end
+
+    sig { returns(T::Boolean) }
+    def sealed?
+      body.one? { |child| child.is_a?(Sealed) }
+    end
+  end
+
+  class SClass < Scope
+    extend T::Sig
+
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super("<self>", loc: loc)
     end
 
     sig { returns(T.self_type) }

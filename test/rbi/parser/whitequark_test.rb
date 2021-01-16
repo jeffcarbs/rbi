@@ -316,6 +316,18 @@ class RBI
           assert_rbi_same(rbi)
         end
 
+        def test_parse_singleton_class
+          rbi = <<~RBI
+            class Foo
+              class << self
+                sig { void }
+                def foo; end
+              end
+            end
+          RBI
+          assert_rbi_same(rbi)
+        end
+
         def test_parse_locations
           rbi = <<~RBI
             class Foo

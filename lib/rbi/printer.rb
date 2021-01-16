@@ -214,9 +214,18 @@ class RBI
     def accept_printer(v)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("class #{name}")
-      if superclass
-        v.print(" < #{superclass}")
-      end
+      v.print(" < #{superclass}") if superclass
+      super(v)
+    end
+  end
+
+  class SClass
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.printl("# #{loc}") if loc && v.show_locs
+      v.printt("class << self")
       super(v)
     end
   end
