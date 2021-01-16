@@ -32,7 +32,7 @@ class RBI
       def initialize
         super
         @rbi = T.let(RBI.new, RBI)
-        @index = T.let(@rbi.index, Index)
+        @index = T.let(Index.new, Index)
       end
 
       sig { params(rbi: RBI).void }

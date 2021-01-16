@@ -6,12 +6,12 @@ class RBI
 
   sig { returns(Index) }
   def index
-    v = Index::Indexer.new
+    v = Index.new
     v << self
-    v.index
+    v
   end
 
-  class Index
+  class Index < Visitor
     extend T::Sig
     include T::Enumerable
 
@@ -25,8 +25,13 @@ class RBI
       @index[id] ||= []
     end
 
-    sig { params(node: Node).void }
+    sig { params(node: T.any(RBI, Node)).void }
     def <<(node)
+      visit(node.is_a?(Node) ? node : node.root)
+    end
+
+    sig { params(node: Node).void }
+    def index(node)
       self[id_for(node)] << node
     end
 
@@ -68,34 +73,16 @@ class RBI
       end
     end
 
-    class Indexer < Visitor
-      extend T::Sig
+    protected
 
-      sig { returns(Index) }
-      attr_reader :index
-
-      sig { void }
-      def initialize
-        super
-        @index = T.let(Index.new, Index)
-      end
-
-      sig { params(rbi: RBI).void }
-      def <<(rbi)
-        visit(rbi.root)
-      end
-
-      protected
-
-      sig { override.params(node: T.nilable(Node)).void }
-      def visit(node)
-        case node
-        when Scope
-          @index << node unless node.is_a?(CBase)
-          visit_all(node.body)
-        when Const, Def, Send
-          @index << node
-        end
+    sig { override.params(node: T.nilable(Node)).void }
+    def visit(node)
+      case node
+      when Scope
+        index(node) unless node.is_a?(CBase)
+        visit_all(node.body)
+      when Const, Def, Send
+        index(node)
       end
     end
   end

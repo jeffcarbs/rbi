@@ -10,10 +10,6 @@ require 'sorbet-runtime'
 require 'stringio'
 require 'thor'
 
-class RBI
-  class Error < StandardError; end
-end
-
 require 'rbi/location'
 require 'rbi/ast'
 

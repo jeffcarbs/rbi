@@ -16,18 +16,38 @@ class RBI
 
     desc 'validate', ''
     def validate(*paths)
+      index = Index.new
+
       paths << '.' if paths.empty?
       files = T.unsafe(Parser).list_files(*paths)
       rbis = parse(files)
-      rbis.each { |rbi| rbi.validate_duplicates }
+      rbis.each do |rbi|
+        index << rbi.root
+      end
+
+      v = Validators::Duplicates.new
+      errors = v.validate(index)
+      errors.each do |error|
+        puts error
+      end
+      puts "No errors. Good job!" if errors.empty?
     end
 
     desc 'format', ''
-    def format(path, *paths)
-      paths = [path, *paths]
+    def format(*paths)
+      paths << '.' if paths.empty?
       files = T.unsafe(Parser).list_files(*paths)
-      rbis = parse(files)
-      rbis.each { |rbi| puts rbi.to_rbi }
+      files.each do |file|
+        content_before = File.read(file).gsub(/#.*/, "")
+        content_after = RBI.from_string(content_before)&.to_rbi
+        file1 = "#{file}.f1"
+        file2 = "#{file}.f2"
+        File.write(file1, content_before.gsub(/\n\n/, "\n"))
+        File.write(file2, content_after&.gsub(/\n\n/, "\n"))
+        system("diff -u #{file1} #{file2}")
+        FileUtils.rm(file1)
+        FileUtils.rm(file2)
+      end
     end
 
     desc 'flatten', ''

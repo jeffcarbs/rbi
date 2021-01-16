@@ -186,10 +186,11 @@ class RBI
     def accept_printer(v)
       v.printt(method.to_s)
       unless args.empty?
-        v.print(" ")
+        v.print("(")
         # v.print("(") unless self.is_a?(Attr)
         v.print(args.join(", "))
         # v.print(")") unless self.is_a?(Attr)
+        v.print(")")
       end
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
