@@ -39,6 +39,7 @@ class RBI
         ).returns(T.nilable(RBI))
       end
       def parse_ast(path, node, comments = [])
+        puts node
         rbi = RBI.new
         assoc = ::Parser::Source::Comment.associate_locations(node, comments)
         builder = Builder.new(path, rbi.root, comments: assoc)

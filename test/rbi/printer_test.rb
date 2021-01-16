@@ -6,6 +6,12 @@ require "test_helper"
 class RBI
   class PrinterTest < Minitest::Test
     extend T::Sig
+
+    def test_print_empty
+      rbi = RBI.new
+      assert_equal("", rbi.to_rbi)
+    end
+
     # Scope
 
     def test_scopes
@@ -194,8 +200,6 @@ class RBI
         def foo(a, b = _, c:, d: _); end
       RBI
     end
-
-    # Sorbet
 
     def test_print_sigs
       rbi = RBI.new
