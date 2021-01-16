@@ -152,9 +152,28 @@ class RBI
               visit(child)
             end
             @out << "]"
+          when :array
+            @out << "["
+            node.children.each_with_index do |child, index|
+              @out << ", " if index > 0
+              visit(child)
+            end
+            @out << "]"
+          when :hash
+            @out << "{"
+            node.children.each_with_index do |child, index|
+              @out << ", " if index > 0
+              visit(child)
+            end
+            @out << "}"
+          when :pair
+            @out << "#{node.children[0].children[0]}: "
+            visit(node.children[1])
           when :str
             @out << "\"#{node.children[0]}\""
-          when :int
+          when :sym
+            @out << ":#{node.children[0]}"
+          when :int, :float
             @out << node.children[0]
           when :nil
             @out << "nil"
@@ -254,7 +273,7 @@ class RBI
           when :casgn
             visit_const_assign(node)
           when :send
-            visit_send(node)
+            visit_send(node) if !node.children[0] || node.children[0].type == :self
           when :block
             visit_sig(node)
           else

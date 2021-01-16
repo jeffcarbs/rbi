@@ -11,13 +11,13 @@ class RBI
     # Utils
 
     sig { params(exp: String, string: String).void }
-    def assert_rbi_equals(exp, string)
+    def assert_rbi_equal(exp, string)
       T.unsafe(self).assert_equal(exp, parse(string).to_rbi)
     end
 
     sig { params(string: String).void }
     def assert_rbi_same(string)
-      assert_rbi_equals(string, string)
+      assert_rbi_equal(string, string)
     end
 
     # Misc
@@ -79,7 +79,7 @@ class RBI
     end
 
     def test_parse_empty_comment
-      assert_rbi_equals("", "# typed: true")
+      assert_rbi_equal("", "# typed: true")
     end
 
     def test_parse_comments
@@ -151,7 +151,7 @@ class RBI
         # main
         def main; end
       RBI
-      assert_rbi_equals(exp, rbi)
+      assert_rbi_equal(exp, rbi)
     end
 
     # Scopes
@@ -212,10 +212,33 @@ class RBI
       assert_rbi_same(rbi)
     end
 
+    def test_parse_singleton_class
+      rbi = <<~RBI
+        class Foo
+          class << self
+            sig { void }
+            def foo; end
+          end
+        end
+      RBI
+      assert_rbi_same(rbi)
+    end
+
+    # Consts
+
     def test_parse_consts
       rbi = <<~RBI
-        CONST2 = CONST1
-        ::CONST2 = CONST1
+        A = nil
+        B = 42
+        C = 3.14
+        D = "foo"
+        E = :s
+        F = CONST
+        G = T.nilable(Foo)
+        H = Foo.new
+        I = T::Array[String].new
+        J = [1, "foo", {a: "String"}]
+        ::Z = CONST
         C::C::C = C::C::C
         C::C = foo
         ::C::C = foo
@@ -223,17 +246,23 @@ class RBI
       assert_rbi_same(rbi)
     end
 
+    # Defs
+
     def test_parse_methods
       rbi = <<~RBI
         def foo; end
         def foo(x, *y, z:); end
-        def foo(p1, p2 = "foo", *p3); end
+        def foo(p1, p2 = 42, *p3); end
         def foo(p1:, p2: "foo", **p3); end
+        def self.foo(p1:, p2: 3.14, p3: nil, &block); end
+        def self.foo(p1: T.let("", String), p2: T::Array[String].new, p3: [1, 2, {}]); end
       RBI
       assert_rbi_same(rbi)
     end
 
-    def test_parse_calls
+    # Sends
+
+    def test_parse_sends
       rbi = <<~RBI
         include A
         extend B
@@ -243,9 +272,28 @@ class RBI
         interface!
         abstract!
         attr_reader :a
+        attr_writer :a
         attr_accessor :a, :b
       RBI
       assert_rbi_same(rbi)
+    end
+
+    def test_parse_visibility
+      rbi = <<~RBI
+        public
+        private
+        protected
+      RBI
+      assert_rbi_same(rbi)
+    end
+
+    def test_parse_ignore_sends_not_on_self
+      rbi = <<~RBI
+        Foo.include A
+        a.abtract!
+        self.mixes_in_class_methods C, D
+      RBI
+      assert_rbi_equal("mixes_in_class_methods C, D\n", rbi)
     end
 
     def test_parse_sigs
@@ -269,18 +317,6 @@ class RBI
 
         sig { returns(T.nilable(String)) }
         def foo; end
-      RBI
-      assert_rbi_same(rbi)
-    end
-
-    def test_parse_singleton_class
-      rbi = <<~RBI
-        class Foo
-          class << self
-            sig { void }
-            def foo; end
-          end
-        end
       RBI
       assert_rbi_same(rbi)
     end

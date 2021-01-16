@@ -162,8 +162,16 @@ class RBI
 
     def test_parse_consts
       rbi = <<~RBI
-        CONST2 = CONST1
-        ::CONST2 = CONST1
+        A = nil
+        B = 42
+        C = 3.14
+        D = "foo"
+        E = :s
+        F = CONST
+        G = T.nilable(Foo)
+        H = Foo.new
+        I = T::Array[String].new
+        ::J = CONST
         C::C::C = C::C::C
         C::C = foo
         ::C::C = foo
@@ -175,23 +183,26 @@ class RBI
       rbi = <<~RBI
         def foo; end
         def foo(x, *y, z:); end
-        def foo(p1, p2 = "foo", *p3); end
+        def foo(p1, p2 = 42, *p3); end
         def foo(p1:, p2: "foo", **p3); end
+        def self.foo(p1:, p2: 3.14, p3: nil); end
+        def self.foo(p1: T.let("", String), p2: T::Array[String].new, p3: [1, 2, {}]); end
       RBI
       assert_rbi_same(rbi)
     end
 
     def test_parse_calls
       rbi = <<~RBI
-        include A
-        extend B
-        prepend C, D
-        mixes_in_class_methods A, B, C
-        sealed!
-        interface!
         abstract!
-        attr_reader :a
         attr_accessor :a, :b
+        attr_reader :a
+        attr_writer :a
+        extend B
+        include A
+        interface!
+        mixes_in_class_methods A, B, C
+        prepend C, D
+        sealed!
       RBI
       assert_rbi_same(rbi)
     end
