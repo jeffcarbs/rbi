@@ -32,7 +32,11 @@ class RBI
       errors.each do |error|
         logger.show_error(error)
       end
-      puts "No errors. Good job!" if errors.empty?
+      if errors.empty?
+        logger.say "No errors. Good job!"
+      else
+        logger.say "\n#{errors.size} errors"
+      end
     end
 
     desc 'format', ''
@@ -50,6 +54,14 @@ class RBI
         FileUtils.rm(file1)
         FileUtils.rm(file2)
       end
+    end
+
+    desc 'test', ''
+    def test(*paths)
+      paths << '.' if paths.empty?
+      files = T.unsafe(Parser).list_files(*paths)
+      rbis = parse(files)
+      rbis.each { |rbi| puts rbi.to_rbi }
     end
 
     desc 'flatten', ''

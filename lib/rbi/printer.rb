@@ -401,4 +401,13 @@ class RBI
       v.print(")")
     end
   end
+
+  class Comment
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.printl("# #{text}")
+    end
+  end
 end

@@ -1,14 +1,25 @@
+# typed: true
+
+# Foo
 class A
+
+  # Bar
   class B
     class C
       extend T::Sig
       def foo; end
     end
 
-    def foo; end
+    #
+    ##
+    # foo
+
+    def foo; end # foo
   end
 
-  def foo; end
-end
+  def foo # foo
+    # foo
+  end # foo
+end # foo
 
 def foo; end

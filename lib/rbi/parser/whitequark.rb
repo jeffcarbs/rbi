@@ -15,26 +15,33 @@ class RBI
 
       sig { override.params(string: String).returns(T.nilable(RBI)) }
       def parse_string(string)
-        node = ::Parser::CurrentRuby.parse(string)
-        parse_ast("-", node)
+        node, comments = ::Parser::CurrentRuby.parse_with_comments(string)
+        parse_ast("-", node, comments)
       rescue ::Parser::SyntaxError => e
         raise Error.new(e.message, loc: nil)
       end
 
       sig { override.params(path: String).returns(T.nilable(RBI)) }
       def parse_file(path)
-        node = ::Parser::CurrentRuby.parse_file(path)
-        parse_ast(path, node)
+        node, comments = ::Parser::CurrentRuby.parse_file_with_comments(path)
+        parse_ast(path, node, comments)
       rescue ::Parser::SyntaxError => e
         raise Error.new(e.message, loc: nil)
       end
 
       private
 
-      sig { params(path: String, node: T.nilable(AST::Node)).returns(T.nilable(RBI)) }
-      def parse_ast(path, node)
+      sig do
+        params(
+          path: String, node:
+          T.nilable(AST::Node),
+          comments: T::Array[::Parser::Source::Comment]
+        ).returns(T.nilable(RBI))
+      end
+      def parse_ast(path, node, comments = [])
         rbi = RBI.new
-        builder = Builder.new(path, rbi.root)
+        assoc = ::Parser::Source::Comment.associate_locations(node, comments)
+        builder = Builder.new(path, rbi.root, comments: assoc)
         builder.visit(node)
         rbi
       end
@@ -220,11 +227,18 @@ class RBI
       class Builder < SExpVisitor
         extend T::Sig
 
-        sig { params(file: String, root: Scope).void }
-        def initialize(file, root)
+        sig do
+          params(
+            file: String,
+            root: Scope,
+            comments: T.nilable(T::Hash[::Parser::Source::Map, T::Array[::Parser::Source::Comment]])
+          ).void
+        end
+        def initialize(file, root, comments: nil)
           super()
           @file = file
           @root = root
+          @comments = comments
           @scopes_stack = T.let([root], T::Array[Scope])
           @current_scope = T.let(root, Scope)
         end
@@ -268,6 +282,7 @@ class RBI
             raise "Unsupported node #{node.type}"
           end
           scope.loc = node_loc(node)
+          scope.comments = node_comments(node)
 
           @scopes_stack << scope
           @current_scope << scope
@@ -409,7 +424,19 @@ class RBI
 
         sig { params(node: AST::Node).returns(Loc) }
         def node_loc(node)
-          loc = node.location
+          rbi_loc(node.location)
+        end
+
+        sig { params(node: AST::Node).returns(T::Array[Comment]) }
+        def node_comments(node)
+          return [] unless @comments
+          comments = @comments[node.location]
+          return [] unless comments
+          comments.map { |comment| Comment.new(comment.text, loc: rbi_loc(comment.loc)) }
+        end
+
+        sig { params(loc: ::Parser::Source::Map).returns(Loc) }
+        def rbi_loc(loc)
           Loc.new(@file, Range.new(Pos.new(loc.line, loc.column), Pos.new(loc.last_line, loc.last_column)))
         end
       end

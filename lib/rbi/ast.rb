@@ -37,7 +37,18 @@ class RBI
     end
   end
 
-  # Scopes
+  class Comment < Node
+    extend T::Helpers
+
+    sig { returns(String) }
+    attr_accessor :text
+
+    sig { params(text: String, loc: T.nilable(Loc)).void }
+    def initialize(text, loc: nil)
+      super(loc: loc)
+      @text = text
+    end
+  end
 
   class Stmt < Node
     extend T::Helpers
@@ -47,12 +58,18 @@ class RBI
     sig { returns(T.nilable(Scope)) }
     attr_accessor :parent_scope
 
+    sig { returns(T::Array[Comment]) }
+    attr_accessor :comments
+
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
       super(loc: loc)
       @parent_scope = T.let(nil, T.nilable(Scope))
+      @comments = T.let([], T::Array[Comment])
     end
   end
+
+  # Scopes
 
   class Scope < Stmt
     extend T::Sig

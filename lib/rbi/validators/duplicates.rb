@@ -15,9 +15,9 @@ class RBI
         errors = []
         index.each do |id, nodes|
           if nodes.size > 1
-            error = Error.new("Duplicated definitions for `#{id}`", loc: nodes.first.loc)
+            error = Error.new("Duplicated definitions for `#{id}`", loc: nodes.first&.loc)
             nodes.each do |node|
-              error << Error::Section.new("defined here:", loc: node.loc)
+              error << RBI::Error::Section.new("defined here:", loc: node.loc)
             end
             errors << error
           end
