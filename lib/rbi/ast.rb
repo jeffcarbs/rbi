@@ -28,6 +28,14 @@ class RBI
     extend T::Helpers
 
     abstract!
+
+    sig { returns(T.nilable(Loc)) }
+    attr_accessor :loc
+
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      @loc = loc
+    end
   end
 
   # class Begin < Node

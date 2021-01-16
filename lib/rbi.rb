@@ -13,6 +13,7 @@ class RBI
   class Error < StandardError; end
 end
 
+require 'rbi/location'
 require 'rbi/ast'
 
 require 'rbi/visitor'

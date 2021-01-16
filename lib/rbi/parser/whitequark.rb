@@ -16,21 +16,21 @@ class RBI
       sig { override.params(string: String).returns(T.nilable(RBI)) }
       def parse_string(string)
         node = ::Parser::CurrentRuby.parse(string)
-        parse_ast(node)
+        parse_ast("-", node)
       end
 
       sig { override.params(path: String).returns(T.nilable(RBI)) }
       def parse_file(path)
         node = ::Parser::CurrentRuby.parse_file(path)
-        parse_ast(node)
+        parse_ast(path, node)
       end
 
       private
 
-      sig { params(node: T.nilable(AST::Node)).returns(T.nilable(RBI)) }
-      def parse_ast(node)
+      sig { params(path: String, node: T.nilable(AST::Node)).returns(T.nilable(RBI)) }
+      def parse_ast(path, node)
         rbi = RBI.new
-        builder = Builder.new(rbi.root)
+        builder = Builder.new(path, rbi.root)
         builder.visit(node)
         rbi
       end
@@ -212,9 +212,10 @@ class RBI
       class Builder < SExpVisitor
         extend T::Sig
 
-        sig { params(root: Scope).void }
-        def initialize(root)
+        sig { params(file: String, root: Scope).void }
+        def initialize(file, root)
           super()
+          @file = file
           @root = root
           @scopes_stack = T.let([root], T::Array[Scope])
           @current_scope = T.let(root, Scope)
@@ -256,6 +257,7 @@ class RBI
           else
             raise "Unsupported node #{node.type}"
           end
+          scope.loc = node_loc(node)
 
           @scopes_stack << scope
           @current_scope << scope
@@ -270,26 +272,30 @@ class RBI
 
         sig { params(node: AST::Node).void }
         def visit_const_assign(node)
-          @current_scope << Const.new(
+          const = Const.new(
             T.must(NameVisitor.visit(node)),
             value: ExpBuilder.visit(node.children[2])
           )
+          const.loc = node_loc(node)
+          @current_scope << const
         end
 
         sig { params(node: AST::Node).void }
         def visit_def(node)
           is_singleton = node.type == :defs
           params = node.children[is_singleton ? 2 : 1].children.map { |child| visit_param(child) }
-          @current_scope << Def.new(
+          meth = Def.new(
             node.children[is_singleton ? 1 : 0].to_s,
             is_singleton: is_singleton,
             params: params,
           )
+          meth.loc = node_loc(node)
+          @current_scope << meth
         end
 
         sig { params(node: AST::Node).returns(Param) }
         def visit_param(node)
-          case node.type
+          param = case node.type
           when :arg
             Arg.new(node.children[0].to_s)
           when :optarg
@@ -307,63 +313,65 @@ class RBI
           else
             raise "Unkown arg type #{node.type}"
           end
+          param.loc = node_loc(node)
+          param
         end
 
         sig { params(node: AST::Node).void }
         def visit_send(node)
           method_name = node.children[1]
-          case method_name
+          send = case method_name
           when :attr_reader
             symbols = node.children[2..-1].map { |child| child.children[0] }
-            attr = AttrReader.new(*symbols)
-            @current_scope << attr
+            AttrReader.new(*symbols)
           when :attr_writer
             symbols = node.children[2..-1].map { |child| child.children[0] }
-            attr = AttrWriter.new(*symbols)
-            @current_scope << attr
+            AttrWriter.new(*symbols)
           when :attr_accessor
             symbols = node.children[2..-1].map { |child| child.children[0] }
-            attr = AttrAccessor.new(*symbols)
-            @current_scope << attr
+            AttrAccessor.new(*symbols)
           when :include
             names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
-            @current_scope << Include.new(*names)
+            Include.new(*names)
           when :extend
             names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
-            @current_scope << Extend.new(*names)
+            Extend.new(*names)
           when :prepend
             names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
-            @current_scope << Prepend.new(*names)
+            Prepend.new(*names)
           when :abstract!
-            @current_scope << Abstract.new
+            Abstract.new
           when :sealed!
-            @current_scope << Sealed.new
+            Sealed.new
           when :interface!
-            @current_scope << Interface.new
+            Interface.new
           when :mixes_in_class_methods
             names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
-            @current_scope << MixesInClassDefs.new(*names)
+            MixesInClassDefs.new(*names)
           when :public
-            @current_scope << Public.new
+            Public.new
           when :protected
-            @current_scope << Protected.new
+            Protected.new
           when :private
-            @current_scope << Private.new
+            Private.new
           when :prop
             visit_prop(node) do |name, type, default_value|
-              @current_scope << TProp.new(name, type: type, default: default_value)
+              TProp.new(name, type: type, default: default_value)
             end
           when :const
             visit_prop(node) do |name, type, default_value|
-              @current_scope << TConst.new(name, type: type, default: default_value)
+              TConst.new(name, type: type, default: default_value)
             end
           end
+          return unless send
+          send.loc = node_loc(node)
+          @current_scope << send
         end
 
         sig do
           params(
             node: AST::Node,
-            block: T.proc.params(name: String, type: String, default_value: T.nilable(String)).void
+            block: T.proc.params(name: String, type: String, default_value: T.nilable(String)).returns(Stmt)
           ).void
         end
         def visit_prop(node, &block)
@@ -385,7 +393,14 @@ class RBI
         def visit_sig(node)
           sig = SigBuilder.build(node)
           return nil unless sig
+          sig.loc = node_loc(node)
           @current_scope << sig
+        end
+
+        sig { params(node: AST::Node).returns(Loc) }
+        def node_loc(node)
+          loc = node.location
+          Loc.new(@file, Range.new(Pos.new(loc.line, loc.column), Pos.new(loc.last_line, loc.last_column)))
         end
       end
     end
