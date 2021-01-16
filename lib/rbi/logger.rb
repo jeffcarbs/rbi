@@ -18,13 +18,13 @@ class RBI
     attr_reader :quiet
 
     sig { returns(T::Boolean) }
-    attr_reader :colors
+    attr_reader :color
 
-    sig { params(level: Integer, quiet: T::Boolean, colors: T::Boolean, out: IO).void }
-    def initialize(level: INFO, quiet: false, colors: true, out: $stderr)
+    sig { params(level: Integer, quiet: T::Boolean, color: T::Boolean, out: IO).void }
+    def initialize(level: INFO, quiet: false, color: true, out: $stderr)
       @level = level
       @quiet = quiet
-      @colors = colors
+      @color = color
       @out = out
     end
 
@@ -45,7 +45,7 @@ class RBI
 
     sig { params(message: String).void }
     def debug(message)
-      puts(DEBUG, colorize("Debug", :ligh_black), ": ", message)
+      puts(DEBUG, colorize(message, :light_black))
     end
 
     sig { params(message: String).void }
@@ -55,7 +55,7 @@ class RBI
 
     sig { params(string: String, color: Symbol).returns(String) }
     def colorize(string, color)
-      return string unless @colors
+      return string unless @color
       string.colorize(color)
     end
 

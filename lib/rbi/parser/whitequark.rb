@@ -372,7 +372,7 @@ class RBI
           params(
             node: AST::Node,
             block: T.proc.params(name: String, type: String, default_value: T.nilable(String)).returns(Stmt)
-          ).void
+          ).returns(Stmt)
         end
         def visit_prop(node, &block)
           name = node.children[2].children[0].to_s

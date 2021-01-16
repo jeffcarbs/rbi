@@ -8,6 +8,10 @@ class RBI
 
     default_task :rbi
 
+    class_option :color, type: :boolean, default: true
+    class_option :quiet, type: :boolean, default: false, aliases: :q
+    class_option :verbose, type: :boolean, default: false, aliases: :v
+
     map T.unsafe(%w[--version] => :__print_version)
 
     # desc 'RBI', ''
@@ -27,7 +31,7 @@ class RBI
     def validate(*paths)
       paths << '.' if paths.empty?
       files = T.unsafe(Parser).list_files(*paths)
-      files.map { |file| T.must(RBI.from_file(file)).validate_duplicates }
+      files.map { |file| parse(file).validate_duplicates }
     end
 
     # desc 'format', ''
@@ -70,6 +74,20 @@ class RBI
     sig { returns(T::Boolean) }
     def self.exit_on_failure?
       true
+    end
+
+    no_commands do
+      def logger
+        level = T.unsafe(self).options[:verbose] ? Logger::DEBUG : Logger::INFO
+        color = T.unsafe(self).options[:color]
+        quiet = T.unsafe(self).options[:quiet]
+        Logger.new(level: level, color: color, quiet: quiet)
+      end
+
+      def parse(file)
+        logger.debug("Parsing #{file}")
+        T.must(RBI.from_file(file))
+      end
     end
   end
 end

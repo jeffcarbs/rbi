@@ -21,6 +21,8 @@ require 'rbi/visitor'
 require 'rbi/index'
 require 'rbi/printer'
 
+require 'rbi/logger'
+
 require 'rbi/parser/base'
 require 'rbi/parser/whitequark'
 require 'rbi/parser/sorbet'
