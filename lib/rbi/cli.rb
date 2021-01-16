@@ -39,12 +39,12 @@ class RBI
       end
     end
 
-    desc 'format', ''
-    def format(*paths)
+    desc 'diff', ''
+    def diff(*paths)
       paths << '.' if paths.empty?
       files = T.unsafe(Parser).list_files(*paths)
       files.each do |file|
-        content_before = File.read(file).gsub(/#.*/, "")
+        content_before = File.read(file)
         content_after = RBI.from_string(content_before)&.to_rbi
         file1 = "#{file}.f1"
         file2 = "#{file}.f2"

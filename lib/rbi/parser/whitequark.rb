@@ -302,6 +302,7 @@ class RBI
             value: ExpBuilder.visit(node.children[2])
           )
           const.loc = node_loc(node)
+          const.comments = node_comments(node)
           @current_scope << const
         end
 
@@ -315,6 +316,7 @@ class RBI
             params: params,
           )
           meth.loc = node_loc(node)
+          meth.comments = node_comments(node)
           @current_scope << meth
         end
 
@@ -390,6 +392,7 @@ class RBI
           end
           return unless send
           send.loc = node_loc(node)
+          send.comments = node_comments(node)
           @current_scope << send
         end
 
@@ -419,6 +422,7 @@ class RBI
           sig = SigBuilder.build(node)
           return nil unless sig
           sig.loc = node_loc(node)
+          sig.comments = node_comments(node)
           @current_scope << sig
         end
 

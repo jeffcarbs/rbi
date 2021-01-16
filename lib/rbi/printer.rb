@@ -179,29 +179,12 @@ class RBI
     end
   end
 
-  class Send
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.printt(method.to_s)
-      unless args.empty?
-        v.print(" ")
-        # v.print("(") unless self.is_a?(Attr)
-        v.print(args.join(", "))
-        # v.print(")") unless self.is_a?(Attr)
-        # v.print(")")
-      end
-      v.print(" # #{loc}") if loc && v.show_locs
-      v.printn
-    end
-  end
-
   class Module
     extend T::Sig
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("module #{name}")
       super(v)
@@ -213,6 +196,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("class #{name}")
       v.print(" < #{superclass}") if superclass
@@ -225,25 +209,10 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("class << self")
       super(v)
-    end
-  end
-
-  class Attr
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      sigs.each { |sig| v.visit(sig) }
-      v.printt(method.to_s)
-      unless names.empty?
-        v.print(" ")
-        v.print(names.map { |name| ":#{name}" }.join(", "))
-      end
-      v.print(" # #{loc}") if loc && v.show_locs
-      v.printn
     end
   end
 
@@ -252,6 +221,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       v.printt(name.to_s)
       value = self.value
       if value
@@ -267,6 +237,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
       v.printt("def ")
       v.print("self.") if is_singleton
@@ -280,6 +251,42 @@ class RBI
         v.print(")")
       end
       v.print("; end")
+      v.print(" # #{loc}") if loc && v.show_locs
+      v.printn
+    end
+  end
+
+  class Send
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.visit_all(comments)
+      v.printt(method.to_s)
+      unless args.empty?
+        # v.print(" ")
+        v.print("(") unless self.is_a?(Attr) || self.is_a?(TProp)
+        v.print(args.join(", "))
+        v.print(")") unless self.is_a?(Attr) || self.is_a?(TProp)
+        # v.print(")")
+      end
+      v.print(" # #{loc}") if loc && v.show_locs
+      v.printn
+    end
+  end
+
+  class Attr
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.visit_all(comments)
+      sigs.each { |sig| v.visit(sig) }
+      v.printt(method.to_s)
+      unless names.empty?
+        v.print(" ")
+        v.print(names.map { |name| ":#{name}" }.join(", "))
+      end
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
@@ -356,6 +363,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("sig {")
       unless body.empty?
@@ -407,7 +415,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      v.printl("# #{text}")
+      v.printl(text)
     end
   end
 end

@@ -8,8 +8,6 @@ class RBI
 
     abstract!
 
-    protected
-
     sig { abstract.params(node: T.nilable(Node)).void }
     def visit(node); end
 

@@ -1,25 +1,33 @@
 # typed: true
 
-# Foo
-class A
+# A
+class A # A
 
-  # Bar
+  # B
+
+  # B
   class B
     class C
-      extend T::Sig
-      def foo; end
+      # eTSig
+      extend T::Sig # eTSig2
+
+      # foo
+
+      # foo
+      def foo; end # foo
     end
 
     #
     ##
-    # foo
+    # bar
 
-    def foo; end # foo
+    def bar; end # bar
   end
 
-  def foo # foo
-    # foo
-  end # foo
-end # foo
+  def baz # foo
+    # baz
+  end # baz
+end # A
 
-def foo; end
+# main
+def main; end
