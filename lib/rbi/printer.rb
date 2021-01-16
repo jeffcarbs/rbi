@@ -8,6 +8,7 @@ class RBI
     params(
       out: T.any(IO, StringIO),
       default_indent: Integer,
+      color: T::Boolean,
       show_locs: T::Boolean,
       show_comments: T::Boolean,
       fold_empty_scopes: T::Boolean,
@@ -20,6 +21,7 @@ class RBI
   def to_rbi(
     out: $stdout,
     default_indent: 0,
+    color: false,
     show_locs: false,
     show_comments: true,
     fold_empty_scopes: true,
@@ -32,6 +34,7 @@ class RBI
     p = Printer.new(
       out: out,
       default_indent: default_indent,
+      color: color,
       show_locs: show_locs,
       show_comments: show_comments,
       fold_empty_scopes: fold_empty_scopes,
@@ -46,6 +49,9 @@ class RBI
 
   class Printer < Visitor
     extend T::Sig
+
+    sig { returns(T::Boolean) }
+    attr_reader :color
 
     sig { returns(T::Boolean) }
     attr_reader :show_locs
@@ -72,6 +78,7 @@ class RBI
       params(
         out: T.any(IO, StringIO),
         default_indent: Integer,
+        color: T::Boolean,
         show_locs: T::Boolean,
         show_comments: T::Boolean,
         fold_empty_scopes: T::Boolean,
@@ -84,6 +91,7 @@ class RBI
     def initialize(
       out: $stdout,
       default_indent: 0,
+      color: false,
       show_locs: false,
       show_comments: true,
       fold_empty_scopes: true,
@@ -95,6 +103,7 @@ class RBI
       super()
       @out = out
       @current_indent = default_indent
+      @color = color
       @show_locs = show_locs
       @show_comments = show_comments
       @fold_empty_scopes = fold_empty_scopes
@@ -137,6 +146,12 @@ class RBI
     def printl(string)
       printt
       printn(string)
+    end
+
+    sig { params(string: String, color: Symbol).returns(String) }
+    def colorize(string, color)
+      return string unless @color
+      string.colorize(color)
     end
 
     sig { override.params(node: T.nilable(Node)).void }
@@ -192,6 +207,15 @@ class RBI
     def accept_printer(v); end
   end
 
+  class Comment
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.printl(v.colorize(text, :light_black))
+    end
+  end
+
   class Scope
     extend T::Sig
 
@@ -202,7 +226,7 @@ class RBI
           v.printn("; end")
         else
           v.printn
-          v.printl("end")
+          v.printl(v.colorize("end", :blue))
         end
         return
       end
@@ -210,7 +234,7 @@ class RBI
       v.indent
       v.visit_body(body)
       v.dedent
-      v.printl("end")
+      v.printl(v.colorize("end", :blue))
     end
   end
 
@@ -221,7 +245,7 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("module #{name}")
+      v.printt("#{v.colorize('module', :blue)} #{v.colorize(name, :cyan)}")
       super(v)
     end
   end
@@ -233,7 +257,7 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("class #{name}")
+      v.printt("#{v.colorize('class', :blue)} #{v.colorize(name, :cyan)}")
       v.print(" < #{superclass}") if superclass
       super(v)
     end
@@ -246,7 +270,7 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("class << self")
+      v.printt("#{v.colorize('class', :blue)} << #{v.colorize('self', :magenta)}")
       super(v)
     end
   end
@@ -257,7 +281,7 @@ class RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       v.visit_all(comments)
-      v.printt(name.to_s)
+      v.printt(v.colorize(name, :cyan))
       value = self.value
       if value
         v.print(" = #{value}")
@@ -274,9 +298,9 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
-      v.printt("def ")
-      v.print("self.") if is_singleton
-      v.print(name.to_s)
+      v.printt("#{v.colorize('def', :blue)} ")
+      v.print("#{v.colorize('self', :magenta)}.") if is_singleton
+      v.print(v.colorize(name.to_s, :light_green))
       unless params.empty?
         v.print("(")
         params.each_with_index do |param, index|
@@ -285,7 +309,7 @@ class RBI
         end
         v.print(")")
       end
-      v.print("; end")
+      v.print("; #{v.colorize('end', :cyan)}")
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
@@ -297,7 +321,7 @@ class RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       v.visit_all(comments)
-      v.printt(method.to_s)
+      v.printt(v.colorize(method.to_s, :yellow))
       unless args.empty?
         parens = case self
         when Include, Extend, Prepend
@@ -310,7 +334,7 @@ class RBI
           false
         end
         v.print(parens ? "(" : " ")
-        v.print(args.join(", "))
+        v.print(args.map{ |arg| v.colorize(arg, :cyan) }.join(", "))
         v.print(parens ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
@@ -325,10 +349,10 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
-      v.printt(method.to_s)
+      v.printt(v.colorize(method.to_s, :yellow))
       unless names.empty?
         v.print(v.paren_attrs ? "(" : " ")
-        v.print(names.map { |name| ":#{name}" }.join(", "))
+        v.print(names.map { |name| ":#{v.colorize(method.to_s, :light_magenta)}" }.join(", "))
         v.print(v.paren_attrs ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
@@ -408,7 +432,7 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("sig {")
+      v.printt(v.colorize("sig {", :light_black))
       unless body.empty?
         v.print(" ")
         body.each_with_index do |builder, index|
@@ -417,48 +441,66 @@ class RBI
         end
         v.print(" ")
       end
-      v.printn("}")
+      v.printn(v.colorize("}", :light_black))
     end
-  end
 
-  class SAbstract
-    extend T::Sig
+    class Abstract
+      extend T::Sig
 
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.print("abstract")
-    end
-  end
-
-  class Returns
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.print(type == "void" ? "void" : "returns(#{type})")
-    end
-  end
-
-  class Params
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.print("params(")
-      params.each_with_index do |param, index|
-        v.print(", ") if index > 0
-        v.print("#{param.name}: #{param.type}")
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("abstract", :light_black))
       end
-      v.print(")")
     end
-  end
 
-  class Comment
-    extend T::Sig
+    class Override
+      extend T::Sig
 
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.printl(text)
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("override", :light_black))
+      end
+    end
+
+    class Params
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize('params(', :light_black))
+        params.each_with_index do |param, index|
+          v.print(v.colorize(', ', :light_black)) if index > 0
+          v.print(v.colorize("#{param.name}: #{param.type}", :light_black))
+        end
+        v.print(v.colorize(')', :light_black))
+      end
+    end
+
+    class Returns
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("returns(#{type})", :light_black))
+      end
+    end
+
+    class TypeParameters
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("type_parameters", :light_black))
+      end
+    end
+
+    class Void
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("void", :light_black))
+      end
     end
   end
 end

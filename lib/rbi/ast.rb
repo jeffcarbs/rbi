@@ -595,19 +595,26 @@ class RBI
   class Sig < Stmt
     extend T::Sig
 
-    sig { returns(T::Array[SigBuilder]) }
+    sig { returns(T::Array[Sig::Builder]) }
     attr_reader :body
 
-    sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String), loc: T.nilable(Loc)).void }
+    sig do
+      params(
+        is_abstract: T::Boolean,
+        params: T.nilable(T::Array[Param]),
+        returns: T.nilable(String),
+        loc: T.nilable(Loc)
+      ).void
+    end
     def initialize(is_abstract: false, params: nil, returns: nil, loc: nil)
       super(loc: loc)
-      @body = T.let([], T::Array[SigBuilder])
-      @body << SAbstract.new if is_abstract
-      @body << Params.new(params) if params
-      @body << Returns.new(returns) if returns
+      @body = T.let([], T::Array[Sig::Builder])
+      @body << Sig::Abstract.new if is_abstract
+      @body << Sig::Params.new(params) if params
+      @body << Sig::Returns.new(returns) if returns
     end
 
-    sig { params(node: SigBuilder).void }
+    sig { params(node: Sig::Builder).void }
     def <<(node)
       @body << node
     end
@@ -616,51 +623,70 @@ class RBI
     def to_s
       "sig"
     end
-  end
 
-  class SigBuilder < Node
-    extend T::Helpers
+    class Builder < Node
+      extend T::Helpers
 
-    abstract!
-  end
-
-  class Returns < SigBuilder
-    extend T::Sig
-
-    sig { returns(T.nilable(String)) }
-    attr_reader :type
-
-    sig do
-      params(
-        type: T.nilable(String),
-        loc: T.nilable(Loc)
-      ).void
+      abstract!
     end
-    def initialize(type = nil, loc: nil)
-      super(loc: loc)
-      @type = type
+
+    class Abstract < Builder; end
+    class Override < Builder; end
+
+    class TypeParameters < Builder
+      extend T::Sig
+
+      sig { returns(T::Array[Param]) }
+      attr_reader :params
+
+      sig do
+        params(
+          params: T::Array[Param],
+          loc: T.nilable(Loc)
+        ).void
+      end
+      def initialize(params = [], loc: nil)
+        super(loc: loc)
+        @params = params
+      end
     end
-  end
 
-  class Params < SigBuilder
-    extend T::Sig
+    class Params < Builder
+      extend T::Sig
 
-    sig { returns(T::Array[Param]) }
-    attr_reader :params
+      sig { returns(T::Array[Param]) }
+      attr_reader :params
 
-    sig do
-      params(
-        params: T::Array[Param],
-        loc: T.nilable(Loc)
-      ).void
+      sig do
+        params(
+          params: T::Array[Param],
+          loc: T.nilable(Loc)
+        ).void
+      end
+      def initialize(params = [], loc: nil)
+        super(loc: loc)
+        @params = params
+      end
     end
-    def initialize(params = [], loc: nil)
-      super(loc: loc)
-      @params = params
-    end
-  end
 
-  class SAbstract < SigBuilder
-    extend T::Sig
+    class Returns < Builder
+      extend T::Sig
+
+      sig { returns(T.nilable(String)) }
+      attr_reader :type
+
+      sig do
+        params(
+          type: T.nilable(String),
+          loc: T.nilable(Loc)
+        ).void
+      end
+      def initialize(type = nil, loc: nil)
+        super(loc: loc)
+        @type = type
+      end
+    end
+
+    class Void < Builder; end
   end
 end

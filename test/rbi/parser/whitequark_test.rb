@@ -161,8 +161,8 @@ class RBI
         module M
           module M1
             module M11
-              module M111; end
-              class M122; end
+              module ::M111; end
+              class M1::M2::M1; end
             end
 
             module M12; end
@@ -298,24 +298,15 @@ class RBI
 
     def test_parse_sigs
       rbi = <<~RBI
-        class Foo
-          sig { void }
-          def foo; end
-
-          sig { returns(String) }
-          def foo; end
-
-          sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
-          def foo(a, b:); end
-
-          sig { abstract.params(a: Integer).void }
-          def foo(a); end
-
-          sig { returns(T::Array[String]) }
-          attr_reader :a
-        end
-
+        sig { void }
+        sig { returns(String) }
+        sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+        sig { abstract.params(a: Integer).void }
+        sig { returns(T::Array[String]) }
+        sig { override.params(printer: Spoom::LSP::SymbolPrinter).void }
         sig { returns(T.nilable(String)) }
+        sig { params(requested_generators: T::Array[String]).returns(T.proc.params(klass: Class).returns(T::Boolean)) }
+        sig { type_parameters(:U).params(step: Integer, _blk: T.proc.returns(T.type_parameter(:U))).returns(T.type_parameter(:U)) }
         def foo; end
       RBI
       assert_rbi_same(rbi)

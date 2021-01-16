@@ -14,6 +14,14 @@ class RBI
 
     map T.unsafe(%w[--version] => :__print_version)
 
+    desc 'show', 'Show RBI content'
+    def show(*paths)
+      paths << '.' if paths.empty?
+      files = T.unsafe(Parser).list_files(*paths)
+      rbis = parse(files)
+      rbis.each { |rbi| puts rbi.to_rbi(color: true) }
+    end
+
     desc 'validate', ''
     def validate(*paths)
       index = Index.new

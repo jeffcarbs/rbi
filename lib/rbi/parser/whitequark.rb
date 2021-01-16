@@ -226,20 +226,25 @@ class RBI
         def visit_send(node)
           visit(node.children[0]) if node.children[0]
           name = node.children[1]
-          case name
-          when :void
-            @current << Returns.new("void")
-          when :returns
-            @current << Returns.new(ExpBuilder.visit(node.children[2]))
+          builder = case name
+          when :abstract
+            Sig::Abstract.new
+          when :override
+            Sig::Override.new
+          when :type_parameters
+            Sig::TypeParameters.new
           when :params
-            @current << Params.new(node.children[2].children.map do |child|
+            Sig::Params.new(node.children[2].children.map do |child|
               name = child.children[0].children[0].to_s
               type = ExpBuilder.visit(child.children[1])
               Param.new(name, type: type)
             end)
-          when :abstract
-            @current << SAbstract.new
+          when :returns
+            Sig::Returns.new(ExpBuilder.visit(node.children[2]))
+          when :void
+            Sig::Void.new
           end
+          @current << builder
         end
       end
 
