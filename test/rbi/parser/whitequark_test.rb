@@ -315,6 +315,58 @@ class RBI
           RBI
           assert_rbi_same(rbi)
         end
+
+        def test_parse_locations
+          rbi = <<~RBI
+            class Foo
+              sig { void }
+              def foo; end
+
+              sig { returns(String) }
+              def foo; end
+
+              sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+              def foo(a, b:); end
+
+              sig { abstract.params(a: Integer).void }
+              def foo(a); end
+
+              sig { returns(T::Array[String]) }
+              attr_reader :a
+            end
+
+            sig { returns(T.nilable(String)) }
+            def foo; end
+          RBI
+          assert_equal(<<~EXP, RBI.from_string(rbi)&.to_rbi(show_locs: true))
+            # -:1:0-16:3
+            class Foo
+              # -:2:2-2:14
+              sig { void }
+              def foo; end # -:3:2-3:14
+
+              # -:5:2-5:25
+              sig { returns(String) }
+              def foo; end # -:6:2-6:14
+
+              # -:8:2-8:85
+              sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+              def foo(a, b:); end # -:9:2-9:21
+
+              # -:11:2-11:42
+              sig { abstract.params(a: Integer).void }
+              def foo(a); end # -:12:2-12:17
+
+              # -:14:2-14:35
+              sig { returns(T::Array[String]) }
+              attr_reader :a # -:15:2-15:16
+            end
+
+            # -:18:0-18:34
+            sig { returns(T.nilable(String)) }
+            def foo; end # -:19:0-19:12
+          EXP
+        end
       end
     end
   end

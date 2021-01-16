@@ -8,16 +8,19 @@ class RBI
     params(
       out: T.any(IO, StringIO),
       default_indent: Integer,
+      show_locs: T::Boolean,
     ).returns(String)
   end
   def to_rbi(
     out: $stdout,
-    default_indent: 0
+    default_indent: 0,
+    show_locs: false
   )
     out = StringIO.new
     p = Printer.new(
       out: out,
       default_indent: default_indent,
+      show_locs: show_locs
     )
     p.visit_body(root.body)
     out.string
@@ -26,18 +29,24 @@ class RBI
   class Printer < Visitor
     extend T::Sig
 
+    sig { returns(T::Boolean) }
+    attr_reader :show_locs
+
     sig do
       params(
         out: T.any(IO, StringIO),
         default_indent: Integer,
+        show_locs: T::Boolean
       ).void
     end
     def initialize(
       out: $stdout,
-      default_indent: 0
+      default_indent: 0,
+      show_locs: false
     )
       super()
       @current_indent = default_indent
+      @show_locs = show_locs
       @out = out
     end
 
@@ -182,6 +191,7 @@ class RBI
         v.print(args.join(", "))
         # v.print(")") unless self.is_a?(Attr)
       end
+      v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
   end
@@ -191,6 +201,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.printl("# #{loc}") if loc && v.show_locs
       v.printt("module #{name}")
       super(v)
     end
@@ -201,6 +212,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.printl("# #{loc}") if loc && v.show_locs
       v.printt("class #{name}")
       if superclass
         v.print(" < #{superclass}")
@@ -220,6 +232,7 @@ class RBI
         v.print(" ")
         v.print(names.map { |name| ":#{name}" }.join(", "))
       end
+      v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
   end
@@ -234,6 +247,7 @@ class RBI
       if value
         v.print(" = #{value}")
       end
+      v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
   end
@@ -255,7 +269,9 @@ class RBI
         end
         v.print(")")
       end
-      v.printn("; end")
+      v.print("; end")
+      v.print(" # #{loc}") if loc && v.show_locs
+      v.printn
     end
   end
 
@@ -330,6 +346,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.printl("# #{loc}") if loc && v.show_locs
       v.printt("sig {")
       unless body.empty?
         v.print(" ")
