@@ -1,6 +1,7 @@
 # typed: strict
 # frozen_string_literal: true
 
+require "colorize"
 require 'fileutils'
 require 'json'
 require 'open3'
