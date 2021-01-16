@@ -17,6 +17,7 @@ require 'rbi/visitor'
 require 'rbi/index'
 require 'rbi/printer'
 
+require 'rbi/error'
 require 'rbi/logger'
 
 require 'rbi/parser/base'

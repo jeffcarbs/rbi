@@ -17,12 +17,16 @@ class RBI
       def parse_string(string)
         node = ::Parser::CurrentRuby.parse(string)
         parse_ast("-", node)
+      rescue ::Parser::SyntaxError => e
+        raise Error.new(e.message, loc: nil)
       end
 
       sig { override.params(path: String).returns(T.nilable(RBI)) }
       def parse_file(path)
         node = ::Parser::CurrentRuby.parse_file(path)
         parse_ast(path, node)
+      rescue ::Parser::SyntaxError => e
+        raise Error.new(e.message, loc: nil)
       end
 
       private

@@ -27,8 +27,10 @@ class RBI
 
       v = Validators::Duplicates.new
       errors = v.validate(index)
+
+      logger = self.logger
       errors.each do |error|
-        puts error
+        logger.show_error(error)
       end
       puts "No errors. Good job!" if errors.empty?
     end

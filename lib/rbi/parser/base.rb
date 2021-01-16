@@ -13,5 +13,7 @@ class RBI
 
     sig { abstract.params(path: String).returns(T.nilable(RBI)) }
     def parse_file(path); end
+
+    class Error < RBI::Error; end
   end
 end
