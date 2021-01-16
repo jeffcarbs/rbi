@@ -39,7 +39,6 @@ class RBI
         ).returns(T.nilable(RBI))
       end
       def parse_ast(path, node, comments = [])
-        puts node
         rbi = RBI.new
         assoc = ::Parser::Source::Comment.associate_locations(node, comments)
         builder = Builder.new(path, rbi.root, comments: assoc)
@@ -375,7 +374,7 @@ class RBI
             Interface.new
           when :mixes_in_class_methods
             names = node.children[2..-1].map { |child| NameVisitor.visit(child) }
-            MixesInClassDefs.new(*names)
+            MixesInClassMethods.new(*names)
           when :public
             Public.new
           when :protected

@@ -9,18 +9,36 @@ class RBI
       out: T.any(IO, StringIO),
       default_indent: Integer,
       show_locs: T::Boolean,
+      show_comments: T::Boolean,
+      fold_empty_scopes: T::Boolean,
+      paren_attrs: T::Boolean,
+      paren_includes: T::Boolean,
+      paren_mixes: T::Boolean,
+      paren_tprops: T::Boolean
     ).returns(String)
   end
   def to_rbi(
     out: $stdout,
     default_indent: 0,
-    show_locs: false
+    show_locs: false,
+    show_comments: true,
+    fold_empty_scopes: true,
+    paren_attrs: false,
+    paren_includes: false,
+    paren_mixes: false,
+    paren_tprops: false
   )
     out = StringIO.new
     p = Printer.new(
       out: out,
       default_indent: default_indent,
-      show_locs: show_locs
+      show_locs: show_locs,
+      show_comments: show_comments,
+      fold_empty_scopes: fold_empty_scopes,
+      paren_attrs: paren_includes,
+      paren_includes: paren_includes,
+      paren_mixes: paren_mixes,
+      paren_tprops: paren_tprops,
     )
     p.visit_body(root.body)
     out.string
@@ -32,22 +50,58 @@ class RBI
     sig { returns(T::Boolean) }
     attr_reader :show_locs
 
+    sig { returns(T::Boolean) }
+    attr_reader :show_comments
+
+    sig { returns(T::Boolean) }
+    attr_reader :fold_empty_scopes
+
+    sig { returns(T::Boolean) }
+    attr_reader :paren_attrs
+
+    sig { returns(T::Boolean) }
+    attr_reader :paren_includes
+
+    sig { returns(T::Boolean) }
+    attr_reader :paren_mixes
+
+    sig { returns(T::Boolean) }
+    attr_reader :paren_tprops
+
     sig do
       params(
         out: T.any(IO, StringIO),
         default_indent: Integer,
-        show_locs: T::Boolean
+        show_locs: T::Boolean,
+        show_comments: T::Boolean,
+        fold_empty_scopes: T::Boolean,
+        paren_attrs: T::Boolean,
+        paren_includes: T::Boolean,
+        paren_mixes: T::Boolean,
+        paren_tprops: T::Boolean
       ).void
     end
     def initialize(
       out: $stdout,
       default_indent: 0,
-      show_locs: false
+      show_locs: false,
+      show_comments: true,
+      fold_empty_scopes: true,
+      paren_attrs: false,
+      paren_includes: false,
+      paren_mixes: false,
+      paren_tprops: false
     )
       super()
+      @out = out
       @current_indent = default_indent
       @show_locs = show_locs
-      @out = out
+      @show_comments = show_comments
+      @fold_empty_scopes = fold_empty_scopes
+      @paren_attrs = paren_attrs
+      @paren_includes = paren_includes
+      @paren_mixes = paren_mixes
+      @paren_tprops = paren_tprops
     end
 
     # Printing
@@ -131,32 +185,8 @@ class RBI
     end
   end
 
-  module Printable
-    extend T::Sig
-
-    sig do
-      params(
-        out: T.any(IO, StringIO),
-        default_indent: Integer,
-      ).returns(String)
-    end
-    def to_rbi(
-      out: $stdout,
-      default_indent: 0
-    )
-      out = StringIO.new
-      p = Printer.new(
-        out: out,
-        default_indent: default_indent,
-      )
-      p.visit(T.cast(self, Node))
-      out.string
-    end
-  end
-
   class Node
     extend T::Sig
-    include Printable
 
     sig { abstract.params(v: Printer).void }
     def accept_printer(v); end
@@ -168,7 +198,12 @@ class RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       if body.empty?
-        v.printn("; end")
+        if v.fold_empty_scopes
+          v.printn("; end")
+        else
+          v.printn
+          v.printl("end")
+        end
         return
       end
       v.printn
@@ -264,11 +299,19 @@ class RBI
       v.visit_all(comments)
       v.printt(method.to_s)
       unless args.empty?
-        # v.print(" ")
-        v.print("(") unless self.is_a?(Attr) || self.is_a?(TProp)
+        parens = case self
+        when Include, Extend, Prepend
+          v.paren_includes
+        when MixesInClassMethods
+          v.paren_mixes
+        when TProp, TConst
+          v.paren_tprops
+        else
+          false
+        end
+        v.print(parens ? "(" : " ")
         v.print(args.join(", "))
-        v.print(")") unless self.is_a?(Attr) || self.is_a?(TProp)
-        # v.print(")")
+        v.print(parens ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
@@ -284,8 +327,9 @@ class RBI
       sigs.each { |sig| v.visit(sig) }
       v.printt(method.to_s)
       unless names.empty?
-        v.print(" ")
+        v.print(v.paren_attrs ? "(" : " ")
         v.print(names.map { |name| ":#{name}" }.join(", "))
+        v.print(v.paren_attrs ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
@@ -359,7 +403,6 @@ class RBI
 
   class Sig
     extend T::Sig
-    include Printable
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)

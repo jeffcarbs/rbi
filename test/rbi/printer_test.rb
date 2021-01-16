@@ -6,218 +6,283 @@ require "test_helper"
 class RBI
   class PrinterTest < Minitest::Test
     extend T::Sig
+    include TestHelper
 
-    def test_print_empty
-      rbi = RBI.new
-      assert_equal("", rbi.to_rbi)
+    # Utils
+
+    sig { params(exp: String, string: String).void }
+    def assert_rbi_equals(exp, string)
+      T.unsafe(self).assert_equal(exp, parse(string).to_rbi)
     end
 
-    # Scope
+    sig { params(string: String).void }
+    def assert_rbi_same(string)
+      assert_rbi_equals(string, string)
+    end
 
-    def test_scopes
-      rbi = RBI.new
-      rbi << Module.new("M")
-      rbi << Class.new("C")
-      assert_equal(<<~RBI, rbi.to_rbi)
-        module M; end
-        class C; end
+    # Comments
+
+    def test_parse_empty
+      assert_rbi_same("")
+    end
+
+    def test_parse_empty_comment
+      assert_rbi_equals("", "# typed: true")
+    end
+
+    def test_parse_comments
+      rbi = <<~RBI
+        # typed: true
+
+        # A1
+        class A # A2
+
+          # B1
+
+          # B2
+          class B
+            class C
+              # C1
+              extend T::Sig # C2
+
+              # foo1
+
+              # foo2
+              def foo; end # foo3
+            end
+
+            #
+            ##
+            # bar1
+
+            def bar; end # bar2
+          end
+
+          def baz # baz1
+            # baz2
+          end # baz3
+        end # A3
+
+        # main
+        def main; end
       RBI
+      exp = <<~RBI
+        # typed: true
+        # A1
+        # A3
+        class A
+          # B1
+          # B2
+          class B
+            class C
+              # C1
+              extend T::Sig
+              # foo1
+              # foo2
+              # foo3
+              def foo; end
+            end
+
+            #
+            ##
+            # bar1
+            # bar2
+            def bar; end
+          end
+
+          # baz1
+          # baz2
+          # baz3
+          def baz; end
+        end
+
+        # main
+        def main; end
+      RBI
+      assert_rbi_equals(exp, rbi)
     end
 
-    def test_scope_nested
-      rbi = RBI.new
-      m0 = Module.new("M0")
-      m1 = Module.new("M1")
-      m1 << Module.new("M11")
-      m1 << Module.new("M12")
-      m0 << m1
-      m0 << Module.new("M2")
-      rbi << m0
+    # Scopes
 
-      assert_equal(<<~RBI, rbi.to_rbi)
-        module M0
+    def test_scopes_nesting
+      rbi = <<~RBI
+        module M
           module M1
-            module M11; end
+            module M11
+              module M111; end
+              class M122; end
+            end
+
             module M12; end
+
+            class M13
+              module M131; end
+            end
           end
 
           module M2; end
         end
       RBI
+      assert_rbi_same(rbi)
     end
 
-    def test_module_with_modifiers
-      rbi = RBI.new
-      rbi << Module.new("M").interface!
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        module M
+    def test_scopes_body
+      rbi = <<~RBI
+        module I
           interface!
         end
-      RBI
-    end
 
-    def test_class_with_modifiers
-      rbi = RBI.new
-      rbi << Class.new("C", superclass: "A").abstract!.sealed!
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        class C < A
+        class C
           abstract!
           sealed!
         end
       RBI
+      assert_rbi_same(rbi)
     end
 
-    def test_singleton
-      rbi = RBI.new
-      c0 = Class.new("C0")
-      c0 << SClass.new
-      rbi << c0
-
-      assert_equal(<<~RBI, rbi.to_rbi)
-        class C0
-          class << self; end
-        end
+    def test_parse_modules
+      rbi = <<~RBI
+        module A; end
+        module ::B; end
+        module A::B::C; end
+        module ::A::B; end
       RBI
+      assert_rbi_same(rbi)
     end
 
-    # Props
+    def test_parse_classes
+      rbi = <<~RBI
+        class A; end
+        class ::B < A; end
+        class A::B::C < A::B; end
+        class ::A::B < ::A::B; end
+      RBI
+      assert_rbi_same(rbi)
+    end
 
-    def test_props
-      rbi = RBI.new
-      rbi << Const.new("FOO")
-      rbi << Const.new("FOO", value: "42")
-      rbi << AttrReader.new(:foo)
-      rbi << AttrAccessor.new(:foo)
-      rbi << Def.new("foo")
-      rbi << Def.new("foo", params: [Arg.new("a")])
-      rbi << Def.new("foo", params: [Arg.new("a"), Arg.new("b"), Arg.new("c")])
-      rbi << Include.new("Foo")
-      rbi << Extend.new("Foo")
-      rbi << Prepend.new("Foo")
+    def test_parse_consts
+      rbi = <<~RBI
+        CONST2 = CONST1
+        ::CONST2 = CONST1
+        C::C::C = C::C::C
+        C::C = foo
+        ::C::C = foo
+      RBI
+      assert_rbi_same(rbi)
+    end
 
-      assert_equal(<<~RBI, rbi.to_rbi)
-        FOO
-        FOO = 42
-        attr_reader :foo
-        attr_accessor :foo
+    def test_parse_methods
+      rbi = <<~RBI
         def foo; end
-        def foo(a); end
-        def foo(a, b, c); end
-        include Foo
-        extend Foo
-        prepend Foo
+        def foo(x, *y, z:); end
+        def foo(p1, p2 = "foo", *p3); end
+        def foo(p1:, p2: "foo", **p3); end
       RBI
+      assert_rbi_same(rbi)
     end
 
-    def test_props_nested
-      rbi = RBI.new
-      foo = Class.new("Foo")
-      foo << Const.new("FOO")
-      foo << Const.new("FOO", value: "42")
-      foo << AttrReader.new(:foo)
-      foo << AttrAccessor.new(:foo)
-      foo << Def.new("foo")
-      foo << Def.new("foo", params: [Arg.new("a")])
-      foo << Def.new("foo", params: [
-        Arg.new("a"),
-        OptArg.new("b", value: "_"),
-        KwArg.new("c"),
-        KwOptArg.new("d", value: "_"),
-      ])
-      foo << Include.new("Foo")
-      foo << Extend.new("Foo")
-      foo << Prepend.new("Foo")
-      rbi << foo
+    def test_parse_calls
+      rbi = <<~RBI
+        include A
+        extend B
+        prepend C, D
+        mixes_in_class_methods A, B, C
+        sealed!
+        interface!
+        abstract!
+        attr_reader :a
+        attr_accessor :a, :b
+      RBI
+      assert_rbi_same(rbi)
+    end
 
-      assert_equal(<<~RBI, rbi.to_rbi)
+    def test_parse_sigs
+      rbi = <<~RBI
         class Foo
-          FOO
-          FOO = 42
-          attr_reader :foo
-          attr_accessor :foo
+          sig { void }
           def foo; end
+
+          sig { returns(String) }
+          def foo; end
+
+          sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+          def foo(a, b:); end
+
+          sig { abstract.params(a: Integer).void }
           def foo(a); end
-          def foo(a, b = _, c:, d: _); end
-          include Foo
-          extend Foo
-          prepend Foo
+
+          sig { returns(T::Array[String]) }
+          attr_reader :a
+        end
+
+        sig { returns(T.nilable(String)) }
+        def foo; end
+      RBI
+      assert_rbi_same(rbi)
+    end
+
+    def test_parse_singleton_class
+      rbi = <<~RBI
+        class Foo
+          class << self
+            sig { void }
+            def foo; end
+          end
         end
       RBI
+      assert_rbi_same(rbi)
     end
 
-    # Sorbet
+    def test_parse_locations
+      rbi = <<~RBI
+        class Foo
+          sig { void }
+          def foo; end
 
-    def test_attr_sigs
-      rbi = RBI.new
-      rbi << AttrReader.new(:foo)
-      rbi << AttrReader.new(:foo, type: nil)
-      rbi << AttrReader.new(:foo, type: "Foo")
-      rbi << AttrAccessor.new(:foo, type: "Foo")
-      rbi << AttrAccessor.new(:foo)
+          sig { returns(String) }
+          def foo; end
 
-      assert_equal(<<~RBI, rbi.to_rbi)
-        attr_reader :foo
-        attr_reader :foo
+          sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+          def foo(a, b:); end
 
-        sig { returns(Foo) }
-        attr_reader :foo
+          sig { abstract.params(a: Integer).void }
+          def foo(a); end
 
-        sig { params(foo: Foo).returns(Foo) }
-        attr_accessor :foo
+          sig { returns(T::Array[String]) }
+          attr_reader :a
+        end
 
-        attr_accessor :foo
-      RBI
-    end
-
-    def test_method_sigs
-      rbi = RBI.new
-      rbi << Def.new("foo")
-      rbi << Def.new("foo", return_type: "String")
-      rbi << Def.new("foo", return_type: "void", params: [Arg.new("a", type: "String")])
-      rbi << Def.new("foo", return_type: "Integer", params: [Arg.new("a", type: "String")])
-      rbi << Def.new("foo", return_type: "void", params: [
-        Arg.new("a", type: "String"),
-        OptArg.new("b", value: "_", type: "String"),
-        KwArg.new("c", type: "String"),
-        KwOptArg.new("d", value: "_", type: "String"),
-      ])
-
-      assert_equal(<<~RBI, rbi.to_rbi)
+        sig { returns(T.nilable(String)) }
         def foo; end
-
-        sig { returns(String) }
-        def foo; end
-
-        sig { params(a: String).void }
-        def foo(a); end
-
-        sig { params(a: String).returns(Integer) }
-        def foo(a); end
-
-        sig { params(a: String, b: String, c: String, d: String).void }
-        def foo(a, b = _, c:, d: _); end
       RBI
-    end
+      assert_equal(<<~EXP, RBI.from_string(rbi)&.to_rbi(show_locs: true))
+        # -:1:0-16:3
+        class Foo
+          # -:2:2-2:14
+          sig { void }
+          def foo; end # -:3:2-3:14
 
-    def test_print_sigs
-      rbi = RBI.new
-      rbi << Sig.new
-      rbi << Sig.new
-      rbi << Sig.new
-      rbi << Sig.new
-      rbi << Sig.new
-      rbi << Sig.new
+          # -:5:2-5:25
+          sig { returns(String) }
+          def foo; end # -:6:2-6:14
 
-      assert_equal(<<~RBI, rbi.to_rbi)
-        sig {}
-        sig {}
-        sig {}
-        sig {}
-        sig {}
-        sig {}
-      RBI
+          # -:8:2-8:85
+          sig { params(a: T.untyped, b: T::Array[String]).returns(T::Hash[String, Integer]) }
+          def foo(a, b:); end # -:9:2-9:21
+
+          # -:11:2-11:42
+          sig { abstract.params(a: Integer).void }
+          def foo(a); end # -:12:2-12:17
+
+          # -:14:2-14:35
+          sig { returns(T::Array[String]) }
+          attr_reader :a # -:15:2-15:16
+        end
+
+        # -:18:0-18:34
+        sig { returns(T.nilable(String)) }
+        def foo; end # -:19:0-19:12
+      EXP
     end
   end
 end

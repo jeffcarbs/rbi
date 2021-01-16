@@ -45,7 +45,11 @@ class RBI
       files = T.unsafe(Parser).list_files(*paths)
       files.each do |file|
         content_before = File.read(file)
-        content_after = RBI.from_string(content_before)&.to_rbi
+        content_after = RBI.from_string(content_before)&.to_rbi(
+          fold_empty_scopes: false,
+          paren_includes: true,
+          paren_mixes: true,
+        )
         file1 = "#{file}.f1"
         file2 = "#{file}.f2"
         File.write(file1, content_before.gsub(/\n\n/, "\n"))

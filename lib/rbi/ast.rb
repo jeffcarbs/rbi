@@ -550,7 +550,7 @@ class RBI
     end
   end
 
-  class MixesInClassDefs < Send
+  class MixesInClassMethods < Send
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
       super(:mixes_in_class_methods, [name, *names], loc: loc)
