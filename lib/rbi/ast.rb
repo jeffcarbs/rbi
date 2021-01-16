@@ -72,9 +72,9 @@ class RBI
     sig { returns(T.nilable(Scope)) }
     attr_accessor :parent_scope
 
-    sig { void }
-    def initialize
-      super()
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(loc: loc)
       @parent_scope = T.let(nil, T.nilable(Scope))
     end
   end
@@ -91,9 +91,9 @@ class RBI
     sig { returns(T::Array[Stmt]) }
     attr_reader :body
 
-    sig { params(name: String).void }
-    def initialize(name)
-      super()
+    sig { params(name: String, loc: T.nilable(Loc)).void }
+    def initialize(name, loc: nil)
+      super(loc: loc)
       @name = name
       @body = T.let([], T::Array[Stmt])
     end
@@ -125,9 +125,9 @@ class RBI
   class Module < Scope
     extend T::Sig
 
-    sig { params(name: String, block: T.nilable(T.proc.params(scope: Module).void)).void }
-    def initialize(name, &block)
-      super(name)
+    sig { params(name: String, loc: T.nilable(Loc), block: T.nilable(T.proc.params(scope: Module).void)).void }
+    def initialize(name, loc: nil, &block)
+      super(name, loc: loc)
       block&.call(self)
     end
 
@@ -153,11 +153,12 @@ class RBI
       params(
         name: String,
         superclass: T.nilable(String),
+        loc: T.nilable(Loc),
         block: T.nilable(T.proc.params(scope: Class).void),
       ).void
     end
-    def initialize(name, superclass: nil, &block)
-      super(name)
+    def initialize(name, superclass: nil, loc: nil, &block)
+      super(name, loc: loc)
       @superclass = superclass
       block&.call(self)
     end
@@ -215,9 +216,9 @@ class RBI
     sig { returns(T.nilable(String)) }
     attr_accessor :value
 
-    sig { params(name: String, value: T.nilable(String)).void }
-    def initialize(name, value: nil)
-      super()
+    sig { params(name: String, value: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, value: nil, loc: nil)
+      super(loc: loc)
       @name = name
       @value = value
     end
@@ -259,11 +260,12 @@ class RBI
         name: String,
         is_singleton: T::Boolean,
         params: T::Array[Param],
-        return_type: T.nilable(String)
+        return_type: T.nilable(String),
+        loc: T.nilable(Loc),
       ).void
     end
-    def initialize(name, is_singleton: false, params: [], return_type: nil)
-      super()
+    def initialize(name, is_singleton: false, params: [], return_type: nil, loc: nil)
+      super(loc: loc)
       @name = name
       @is_singleton = is_singleton
       @params = params
@@ -305,11 +307,12 @@ class RBI
     sig do
       params(
         name: String,
-        type: T.nilable(String)
+        type: T.nilable(String),
+        loc: T.nilable(Loc)
       ).void
     end
-    def initialize(name, type: nil)
-      super()
+    def initialize(name, type: nil, loc: nil)
+      super(loc: loc)
       @name = name
       @type = type
     end
@@ -333,11 +336,12 @@ class RBI
       params(
         name: String,
         value: T.nilable(String),
-        type: T.nilable(String)
+        type: T.nilable(String),
+        loc: T.nilable(Loc)
       ).void
     end
-    def initialize(name, value: nil, type: nil)
-      super(name, type: type)
+    def initialize(name, value: nil, type: nil, loc: nil)
+      super(name, type: type, loc: loc)
       @value = value
     end
   end
@@ -370,9 +374,9 @@ class RBI
     sig { returns(T::Array[String]) }
     attr_reader :args
 
-    sig { params(method: ::Symbol, args: T::Array[String]).void }
-    def initialize(method, args = [])
-      super()
+    sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
+    def initialize(method, args = [], loc: nil)
+      super(loc: loc)
       @method = method
       @args = args
     end
@@ -399,9 +403,9 @@ class RBI
     sig { returns(T::Array[Sig]) }
     attr_reader :sigs
 
-    sig { params(kind: ::Symbol, names: T::Array[::Symbol]).void }
-    def initialize(kind, names)
-      super(kind, names)
+    sig { params(kind: ::Symbol, names: T::Array[::Symbol], loc: T.nilable(Loc)).void }
+    def initialize(kind, names, loc: nil)
+      super(kind, names, loc: loc)
       @sigs = T.let([], T::Array[Sig])
     end
 
@@ -414,9 +418,9 @@ class RBI
   class AttrReader < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
-    def initialize(name, *names, type: nil)
-      super(:attr_reader, [name, *names])
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, *names, type: nil, loc: nil)
+      super(:attr_reader, [name, *names], loc: loc)
       @sigs << Sig.new(returns: type) if type
     end
   end
@@ -424,9 +428,9 @@ class RBI
   class AttrWriter < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
-    def initialize(name, *names, type: nil)
-      super(:attr_writer, [name, *names])
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, *names, type: nil, loc: nil)
+      super(:attr_writer, [name, *names], loc: loc)
       @sigs << Sig.new(params: [
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: "void") if type
@@ -436,9 +440,9 @@ class RBI
   class AttrAccessor < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String)).void }
-    def initialize(name, *names, type: nil)
-      super(:attr_accessor, [name, *names])
+    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, *names, type: nil, loc: nil)
+      super(:attr_accessor, [name, *names], loc: loc)
       @sigs << Sig.new(params: [
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: type) if type
@@ -450,27 +454,27 @@ class RBI
   class Include < Send
     extend T::Sig
 
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:include, [name, *names])
+    sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
+      super(:include, [name, *names], loc: loc)
     end
   end
 
   class Extend < Send
     extend T::Sig
 
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:extend, [name, *names])
+    sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
+      super(:extend, [name, *names], loc: loc)
     end
   end
 
   class Prepend < Send
     extend T::Sig
 
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:prepend, [name, *names])
+    sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
+      super(:prepend, [name, *names], loc: loc)
     end
   end
 
@@ -483,86 +487,86 @@ class RBI
   end
 
   class Public < Visibility
-    sig { void }
-    def initialize
-      super(:public)
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:public, loc: loc)
     end
   end
 
   class Protected < Visibility
-    sig { void }
-    def initialize
-      super(:protected)
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:protected, loc: loc)
     end
   end
 
   class Private < Visibility
-    sig { void }
-    def initialize
-      super(:private)
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:private, loc: loc)
     end
   end
 
   # Sorbet
 
   class Abstract < Send
-    sig { void }
-    def initialize
-      super(:abstract!, [])
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:abstract!, [], loc: loc)
     end
   end
 
   class Interface < Send
-    sig { void }
-    def initialize
-      super(:interface!, [])
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:interface!, [], loc: loc)
     end
   end
 
   class Sealed < Send
-    sig { void }
-    def initialize
-      super(:sealed!, [])
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
+      super(:sealed!, [], loc: loc)
     end
   end
 
   class MixesInClassDefs < Send
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:mixes_in_class_methods, [name, *names])
+    sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
+      super(:mixes_in_class_methods, [name, *names], loc: loc)
     end
   end
 
   class TypeMember < Send
-    sig { params(name: String, names: String).void }
-    def initialize(name, *names)
-      super(:type_member, [name, *names])
+    sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
+      super(:type_member, [name, *names], loc: loc)
     end
   end
 
   class TProp < Send
     extend T::Sig
 
-    sig { params(name: String, type: String, default: T.nilable(String)).void }
-    def initialize(name, type:, default: nil)
+    sig { params(name: String, type: String, default: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, type:, default: nil, loc: nil)
       args = []
       args << ":#{name}"
       args << type
       args << "default: #{default}" if default
-      super(:prop, args)
+      super(:prop, args, loc: loc)
     end
   end
 
   class TConst < Send
     extend T::Sig
 
-    sig { params(name: String, type: String, default: T.nilable(String)).void }
-    def initialize(name, type:, default: nil)
+    sig { params(name: String, type: String, default: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, type:, default: nil, loc: nil)
       args = []
       args << ":#{name}"
       args << type
       args << "default: #{default}" if default
-      super(:const, args)
+      super(:const, args, loc: loc)
     end
   end
 
@@ -574,9 +578,9 @@ class RBI
     sig { returns(T::Array[SigBuilder]) }
     attr_reader :body
 
-    sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String)).void }
-    def initialize(is_abstract: false, params: nil, returns: nil)
-      super()
+    sig { params(is_abstract: T::Boolean, params: T.nilable(T::Array[Param]), returns: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(is_abstract: false, params: nil, returns: nil, loc: nil)
+      super(loc: loc)
       @body = T.let([], T::Array[SigBuilder])
       @body << SAbstract.new if is_abstract
       @body << Params.new(params) if params
@@ -608,11 +612,12 @@ class RBI
 
     sig do
       params(
-        type: T.nilable(String)
+        type: T.nilable(String),
+        loc: T.nilable(Loc)
       ).void
     end
-    def initialize(type = nil)
-      super()
+    def initialize(type = nil, loc: nil)
+      super(loc: loc)
       @type = type
     end
   end
@@ -626,10 +631,11 @@ class RBI
     sig do
       params(
         params: T::Array[Param],
+        loc: T.nilable(Loc)
       ).void
     end
-    def initialize(params = [])
-      super()
+    def initialize(params = [], loc: nil)
+      super(loc: loc)
       @params = params
     end
   end
