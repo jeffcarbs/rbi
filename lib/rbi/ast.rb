@@ -390,8 +390,11 @@ class RBI
     sig { returns(T::Array[String]) }
     attr_reader :args
 
+    # sig { returns(T.nilable[Block]) }
+    # attr_reader :block
+
     sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
-    def initialize(method, args = [], loc: nil)
+    def initialize(method, args: [], loc: nil)
       super(loc: loc)
       @method = method
       @args = args
@@ -420,8 +423,8 @@ class RBI
     attr_reader :sigs
 
     sig { params(kind: ::Symbol, names: T::Array[::Symbol], loc: T.nilable(Loc)).void }
-    def initialize(kind, names, loc: nil)
-      super(kind, names, loc: loc)
+    def initialize(kind, names:, loc: nil)
+      super(kind, args: names.map(&:to_s), loc: loc)
       @sigs = T.let([], T::Array[Sig])
     end
 
@@ -436,7 +439,7 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
     def initialize(name, *names, type: nil, loc: nil)
-      super(:attr_reader, [name, *names], loc: loc)
+      super(:attr_reader, names: [name.to_s, *names], loc: loc)
       @sigs << Sig.new(returns: type) if type
     end
   end
@@ -446,7 +449,7 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
     def initialize(name, *names, type: nil, loc: nil)
-      super(:attr_writer, [name, *names], loc: loc)
+      super(:attr_writer, names: [name, *names], loc: loc)
       @sigs << Sig.new(params: [
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: "void") if type
@@ -458,7 +461,7 @@ class RBI
 
     sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
     def initialize(name, *names, type: nil, loc: nil)
-      super(:attr_accessor, [name, *names], loc: loc)
+      super(:attr_accessor, names: [name, *names], loc: loc)
       @sigs << Sig.new(params: [
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: type) if type
@@ -472,7 +475,7 @@ class RBI
 
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
-      super(:include, [name, *names], loc: loc)
+      super(:include, args: [name, *names], loc: loc)
     end
   end
 
@@ -481,7 +484,7 @@ class RBI
 
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
-      super(:extend, [name, *names], loc: loc)
+      super(:extend, args: [name, *names], loc: loc)
     end
   end
 
@@ -490,7 +493,7 @@ class RBI
 
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
-      super(:prepend, [name, *names], loc: loc)
+      super(:prepend, args: [name, *names], loc: loc)
     end
   end
 
@@ -528,35 +531,35 @@ class RBI
   class Abstract < Send
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
-      super(:abstract!, [], loc: loc)
+      super(:abstract!, loc: loc)
     end
   end
 
   class Interface < Send
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
-      super(:interface!, [], loc: loc)
+      super(:interface!, loc: loc)
     end
   end
 
   class Sealed < Send
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
-      super(:sealed!, [], loc: loc)
+      super(:sealed!, loc: loc)
     end
   end
 
   class MixesInClassMethods < Send
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
-      super(:mixes_in_class_methods, [name, *names], loc: loc)
+      super(:mixes_in_class_methods, args: [name, *names], loc: loc)
     end
   end
 
   class TypeMember < Send
     sig { params(name: String, names: String, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
-      super(:type_member, [name, *names], loc: loc)
+      super(:type_member, args: [name, *names], loc: loc)
     end
   end
 
@@ -569,7 +572,7 @@ class RBI
       args << ":#{name}"
       args << type
       args << "default: #{default}" if default
-      super(:prop, args, loc: loc)
+      super(:prop, args: args, loc: loc)
     end
   end
 
@@ -582,7 +585,7 @@ class RBI
       args << ":#{name}"
       args << type
       args << "default: #{default}" if default
-      super(:const, args, loc: loc)
+      super(:const, args: args, loc: loc)
     end
   end
 
@@ -635,21 +638,21 @@ class RBI
     class Abstract < Builder
       sig { params(loc: T.nilable(Loc)).void }
       def initialize(loc: nil)
-        super(:abstract, [], loc: loc)
+        super(:abstract, loc: loc)
       end
     end
 
     class Override < Builder
       sig { params(loc: T.nilable(Loc)).void }
       def initialize(loc: nil)
-        super(:override, [], loc: loc)
+        super(:override, loc: loc)
       end
     end
 
     class Overridable < Builder
       sig { params(loc: T.nilable(Loc)).void }
       def initialize(loc: nil)
-        super(:overridable, [], loc: loc)
+        super(:overridable, loc: loc)
       end
     end
 
@@ -710,7 +713,7 @@ class RBI
     class Void < Builder
       sig { params(loc: T.nilable(Loc)).void }
       def initialize(loc: nil)
-        super(:void, [], loc: loc)
+        super(:void, loc: loc)
       end
     end
   end
