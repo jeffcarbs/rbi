@@ -1,5 +1,0 @@
-CONST2 = CONST1
-::CONST2 = CONST1
-C::C::C = C::C::C
-C::C = foo
-::C::C = foo

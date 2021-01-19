@@ -6,10 +6,10 @@ require "test_helper"
 class RBI
   module Rewriters
     class CollectSigsTest < Minitest::Test
-      extend T::Sig
+      include TestHelper
 
       def test_collect_sigs
-        index = parse_index(<<~RBI)
+        index = collect(<<~RBI)
           sig {}
           sig {}
           def foo; end
@@ -38,9 +38,8 @@ class RBI
 
       private
 
-      sig { params(rbi: String).returns(T.untyped) }
-      def parse_index(rbi)
-        T.must(RBI.from_string(rbi)).collect_sigs.index
+      def collect(rbi)
+        parse(rbi).collect_sigs.index
       end
     end
   end

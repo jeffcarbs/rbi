@@ -390,14 +390,15 @@ class RBI
     sig { returns(T::Array[String]) }
     attr_reader :args
 
-    # sig { returns(T.nilable[Block]) }
-    # attr_reader :block
+    sig { returns(T.nilable(Block)) }
+    attr_reader :block
 
-    sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
-    def initialize(method, args: [], loc: nil)
+    sig { params(method: ::Symbol, args: T::Array[String], block: T.nilable(Block), loc: T.nilable(Loc)).void }
+    def initialize(method, args: [], block: nil, loc: nil)
       super(loc: loc)
       @method = method
       @args = args
+      @block = block
     end
 
     sig { returns(String) }
@@ -409,6 +410,14 @@ class RBI
     def to_s
       method.to_s
     end
+  end
+
+  class Block < Scope
+    # TODO
+    # Scope without name
+    # Scope generic?
+    # Block call?
+    # Sig is block call?
   end
 
   # Attributes

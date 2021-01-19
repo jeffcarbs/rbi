@@ -11,6 +11,16 @@ class RBI
     def parse(string)
       T.must(RBI.from_string(string))
     end
+
+    sig { params(exp: String, string: String).void }
+    def assert_rbi_equals(exp, string)
+      T.unsafe(self).assert_equal(exp, parse(string).to_rbi)
+    end
+
+    sig { params(string: String).void }
+    def assert_rbi_same(string)
+      assert_rbi_equals(string, string)
+    end
   end
 end
 

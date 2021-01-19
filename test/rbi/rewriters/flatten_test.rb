@@ -5,7 +5,7 @@ require "test_helper"
 
 class RBI
   class FlattenTest < Minitest::Test
-    extend T::Sig
+    include TestHelper
 
     def test_flatten_empty
       assert_flatten_equal("", "")
@@ -123,10 +123,9 @@ class RBI
 
     private
 
-    sig { params(exp: String, rbi: String).void }
     def assert_flatten_equal(exp, rbi)
-      res = RBI.from_string(rbi)&.flatten
-      assert_equal(exp, res&.to_rbi)
+      res = parse(rbi).flatten
+      assert_equal(exp, res.to_rbi)
     end
   end
 end

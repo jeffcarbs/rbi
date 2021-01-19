@@ -5,15 +5,15 @@ require "test_helper"
 
 class RBI
   class IndexTest < Minitest::Test
-    extend T::Sig
+    include TestHelper
 
     def test_index_empty
-      index = parse_index("")
+      index = self.index("")
       assert(index.empty?)
     end
 
     def test_index_nodes
-      index = parse_index(<<~RBI)
+      index = self.index(<<~RBI)
         class A
           extend T::Helpers
           extend T::Sig
@@ -43,9 +43,8 @@ class RBI
 
     private
 
-    sig { params(rbi: String).returns(T.untyped) }
-    def parse_index(rbi)
-      T.must(RBI.from_string(rbi)).index
+    def index(rbi)
+      parse(rbi).index
     end
   end
 end

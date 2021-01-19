@@ -6,10 +6,10 @@ require "test_helper"
 class RBI
   module Rewriters
     class SortTest < Minitest::Test
-      extend T::Sig
+      include TestHelper
 
       def test_sort
-        rbi = parse_rbi(<<~RBI)
+        rbi = sort(<<~RBI)
           def b; end
 
           class B; end
@@ -48,9 +48,8 @@ class RBI
 
       private
 
-      sig { params(rbi: String).returns(RBI) }
-      def parse_rbi(rbi)
-        T.must(RBI.from_string(rbi)).sort
+      def sort(rbi)
+        parse(rbi).sort
       end
     end
   end
