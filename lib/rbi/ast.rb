@@ -620,10 +620,10 @@ class RBI
       @body << Sig::Abstract.new if is_abstract
       @body << Sig::Params.new(params) if params
       if returns
-        if returns == "void"
-          @body << Sig::Void.new
+        @body << if returns == "void"
+          Sig::Void.new
         else
-          @body << Sig::Returns.new(returns)
+          Sig::Returns.new(returns)
         end
       end
     end

@@ -7,6 +7,12 @@ class RBI
   module TestHelper
     extend T::Sig
 
+    sig { params(strings: String).returns([T::Boolean, T::Array[Validator::Error]]) }
+    def validate(*strings)
+      rbis = strings.map { |string| parse(string) }
+      RBI.validate(rbis)
+    end
+
     sig { params(string: String).returns(RBI) }
     def parse(string)
       T.must(RBI.from_string(string))

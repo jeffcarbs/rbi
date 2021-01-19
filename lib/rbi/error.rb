@@ -47,12 +47,12 @@ class RBI
     def show_error(error)
       loc = error.loc
 
-      puts(ERROR, "\n#{loc.to_s}: #{colorize_message(error.message, :red)}")
+      puts(ERROR, "\n#{loc}: #{colorize_message(error.message, :red)}")
       show_source(loc, indent_level: 1) if loc
 
       error.sections.each do |section|
         loc = section.loc
-        puts(ERROR, "\n\t#{loc.to_s}: #{colorize_message(section.message, :yellow)}")
+        puts(ERROR, "\n\t#{loc}: #{colorize_message(section.message, :yellow)}")
         show_source(loc, indent_level: 2) if loc
       end
     end
@@ -72,7 +72,7 @@ class RBI
       lines = [
         *lines[1, 2],
         colorize("#{' ' * T.must(lines[2]&.index(/[^ ]/))}...", :light_black),
-        *lines[-3..-2]
+        *lines[-3..-2],
       ] if lines.size > 10
       lines.each do |line|
         puts(ERROR, "#{indent}#{colorize(line.rstrip, :light_black)}")
@@ -81,7 +81,7 @@ class RBI
 
     sig { params(message: String, color: Symbol).returns(String) }
     def colorize_message(message, color)
-      message = colorize(message, color).gsub(/`([^`]+)`/, colorize("\\1", :cyan))
+      colorize(message, color).gsub(/`([^`]+)`/, colorize("\\1", :cyan))
     end
   end
 end

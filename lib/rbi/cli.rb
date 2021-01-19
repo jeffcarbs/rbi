@@ -24,27 +24,22 @@ class RBI
 
     desc 'validate', ''
     def validate(*paths)
-      index = Index.new
-
+      logger = self.logger
       paths << '.' if paths.empty?
+
       files = T.unsafe(Parser).list_files(*paths)
       rbis = parse(files)
-      rbis.each do |rbi|
-        index << rbi.root
+      status, errors = RBI.validate(rbis)
+
+      if status
+        logger.say("No errors. Good job!")
+        return
       end
 
-      v = Validators::Duplicates.new
-      errors = v.validate(index)
-
-      logger = self.logger
       errors.each do |error|
         logger.show_error(error)
       end
-      if errors.empty?
-        logger.say "No errors. Good job!"
-      else
-        logger.say "\n#{errors.size} errors"
-      end
+      logger.say("\n#{errors.size} errors")
     end
 
     desc 'diff', ''

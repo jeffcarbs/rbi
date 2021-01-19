@@ -38,7 +38,7 @@ class RBI
       show_locs: show_locs,
       show_comments: show_comments,
       fold_empty_scopes: fold_empty_scopes,
-      paren_attrs: paren_includes,
+      paren_attrs: paren_attrs,
       paren_includes: paren_includes,
       paren_mixes: paren_mixes,
       paren_tprops: paren_tprops,
@@ -334,7 +334,7 @@ class RBI
           false
         end
         v.print(parens ? "(" : " ")
-        v.print(args.map{ |arg| v.colorize(arg, :cyan) }.join(", "))
+        v.print(args.map { |arg| v.colorize(arg, :cyan) }.join(", "))
         v.print(parens ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs

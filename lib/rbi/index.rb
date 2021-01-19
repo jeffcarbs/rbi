@@ -6,9 +6,14 @@ class RBI
 
   sig { returns(Index) }
   def index
-    v = Index.new
-    v << self
-    v
+    RBI.index([self])
+  end
+
+  sig { params(rbis: T::Array[RBI]).returns(Index) }
+  def self.index(rbis)
+    index = Index.new
+    rbis.each { |rbi| index << rbi.root }
+    index
   end
 
   class Index < Visitor
@@ -17,6 +22,7 @@ class RBI
 
     sig { void }
     def initialize
+      super()
       @index = T.let({}, T::Hash[String, T::Array[Node]])
     end
 

@@ -31,6 +31,9 @@ require 'rbi/rewriters/flatten'
 require 'rbi/rewriters/merge'
 require 'rbi/rewriters/sort'
 
+require 'rbi/validators/validator'
 require 'rbi/validators/duplicates'
+require 'rbi/validators'
+
 require 'rbi/version'
 require 'rbi/cli'

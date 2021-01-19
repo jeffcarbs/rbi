@@ -9,16 +9,18 @@ class RBI
       include TestHelper
 
       def test_validate_empty
-        rbi = parse("")
-        assert_empty(rbi.validate_duplicates)
+        status, errors = validate("")
+        assert(status)
+        assert_empty(errors)
       end
 
       def test_validate
-        rbi = parse(<<~RBI)
+        status, errors = validate(<<~RBI)
           class A; end
           class A; end
         RBI
-        assert_equal(["::A defined multiple times"], rbi.validate_duplicates)
+        refute(status)
+        assert_equal(["Duplicated definitions for `::A`"], errors.map(&:message))
       end
     end
   end
