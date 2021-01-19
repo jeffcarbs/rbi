@@ -43,7 +43,7 @@ class RBI
         case node
         when Include, Prepend, Extend
           0
-        when Scope, Const
+        when Module, Class, Const
           1
         when Attr
           2

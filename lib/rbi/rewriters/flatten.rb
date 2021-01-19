@@ -37,7 +37,7 @@ class RBI
         when CBase
           visit_all(node.body.dup)
           @rbi.root.concat(node.body)
-        when Scope
+        when Module, Class
           visit_all(node.body.dup)
           node.name = node.qualified_name
           @rbi.root << node

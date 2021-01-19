@@ -257,11 +257,8 @@ class RBI
 
   # Defs
 
-  class Def < Stmt
+  class Def < Scope
     extend T::Sig
-
-    sig { returns(String) }
-    attr_accessor :name
 
     sig { returns(T::Boolean) }
     attr_reader :is_singleton
@@ -285,8 +282,7 @@ class RBI
       ).void
     end
     def initialize(name, is_singleton: false, params: [], return_type: nil, loc: nil)
-      super(loc: loc)
-      @name = name
+      super(name, loc: loc)
       @is_singleton = is_singleton
       @params = params
       @return_type = return_type
@@ -630,15 +626,32 @@ class RBI
       "sig"
     end
 
-    class Builder < Node
+    class Builder < Send
       extend T::Helpers
 
       abstract!
     end
 
-    class Abstract < Builder; end
-    class Override < Builder; end
-    class Overridable < Builder; end
+    class Abstract < Builder
+      sig { params(loc: T.nilable(Loc)).void }
+      def initialize(loc: nil)
+        super(:abstract, [], loc: loc)
+      end
+    end
+
+    class Override < Builder
+      sig { params(loc: T.nilable(Loc)).void }
+      def initialize(loc: nil)
+        super(:override, [], loc: loc)
+      end
+    end
+
+    class Overridable < Builder
+      sig { params(loc: T.nilable(Loc)).void }
+      def initialize(loc: nil)
+        super(:overridable, [], loc: loc)
+      end
+    end
 
     class TypeParameters < Builder
       extend T::Sig
@@ -653,7 +666,7 @@ class RBI
         ).void
       end
       def initialize(params = [], loc: nil)
-        super(loc: loc)
+        super(:type_parameter, loc: loc)
         @params = params
       end
     end
@@ -671,7 +684,7 @@ class RBI
         ).void
       end
       def initialize(params = [], loc: nil)
-        super(loc: loc)
+        super(:params, loc: loc)
         @params = params
       end
     end
@@ -689,11 +702,16 @@ class RBI
         ).void
       end
       def initialize(type = nil, loc: nil)
-        super(loc: loc)
+        super(:returns, loc: loc)
         @type = type
       end
     end
 
-    class Void < Builder; end
+    class Void < Builder
+      sig { params(loc: T.nilable(Loc)).void }
+      def initialize(loc: nil)
+        super(:void, [], loc: loc)
+      end
+    end
   end
 end
