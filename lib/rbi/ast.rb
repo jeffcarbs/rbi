@@ -632,6 +632,7 @@ class RBI
 
     class Abstract < Builder; end
     class Override < Builder; end
+    class Overridable < Builder; end
 
     class TypeParameters < Builder
       extend T::Sig

@@ -462,6 +462,15 @@ class RBI
       end
     end
 
+    class Overridable
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("overridable", :light_black))
+      end
+    end
+
     class Params
       extend T::Sig
 

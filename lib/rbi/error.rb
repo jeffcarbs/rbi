@@ -47,12 +47,12 @@ class RBI
     def show_error(error)
       loc = error.loc
 
-      puts(ERROR, "\n#{colorize(loc.to_s, :red)}: #{colorize_message(error.message)}")
+      puts(ERROR, "\n#{loc.to_s}: #{colorize_message(error.message, :red)}")
       show_source(loc, indent_level: 1) if loc
 
       error.sections.each do |section|
         loc = section.loc
-        puts(ERROR, "\n\t#{colorize(loc.to_s, :yellow)}: #{colorize_message(section.message)}")
+        puts(ERROR, "\n\t#{loc.to_s}: #{colorize_message(section.message, :yellow)}")
         show_source(loc, indent_level: 2) if loc
       end
     end
@@ -71,17 +71,17 @@ class RBI
       lines = T.must(string.lines[(T.must(loc.range&.from&.line) - 1)..(T.must(loc.range&.to&.line) - 1)])
       lines = [
         *lines[1, 2],
-        colorize("#{' ' * T.must(lines[2]&.index(/[^ ]/))}  ...", :light_black),
+        colorize("#{' ' * T.must(lines[2]&.index(/[^ ]/))}...", :light_black),
         *lines[-3..-2]
       ] if lines.size > 10
       lines.each do |line|
-        puts(ERROR, "#{indent}#{line}")
+        puts(ERROR, "#{indent}#{colorize(line.rstrip, :light_black)}")
       end
     end
 
-    sig { params(message: String).returns(String) }
-    def colorize_message(message)
-      message = message.gsub(/`([^`]+)`/, colorize("\\1", :blue))
+    sig { params(message: String, color: Symbol).returns(String) }
+    def colorize_message(message, color)
+      message = colorize(message, color).gsub(/`([^`]+)`/, colorize("\\1", :cyan))
     end
   end
 end

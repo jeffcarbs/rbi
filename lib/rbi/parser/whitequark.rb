@@ -231,6 +231,8 @@ class RBI
             Sig::Abstract.new
           when :override
             Sig::Override.new
+          when :overridable
+            Sig::Overridable.new
           when :type_parameters
             Sig::TypeParameters.new
           when :params
@@ -243,6 +245,8 @@ class RBI
             Sig::Returns.new(ExpBuilder.visit(node.children[2]))
           when :void
             Sig::Void.new
+          else
+            raise "Unhandled #{node}"
           end
           @current << builder
         end
