@@ -5,7 +5,7 @@ require "test_helper"
 
 class RBI
   class MergeTest < Minitest::Test
-    extend T::Sig
+    include TestHelper
 
     def test_merge_empty
       assert_merge_equal("", "", "")
@@ -151,8 +151,7 @@ class RBI
     private
 
     def assert_merge_equal(exp, rbi1, rbi2)
-      res = RBI.from_string(rbi1)&.merge(T.must(RBI.from_string(rbi2)))
-      assert_equal(exp, res&.to_rbi)
+      assert_equal(exp, parse(rbi1).merge(parse(rbi2)).to_rbi)
     end
   end
 end

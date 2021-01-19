@@ -124,8 +124,7 @@ class RBI
     private
 
     def assert_flatten_equal(exp, rbi)
-      res = parse(rbi).flatten
-      assert_equal(exp, res.to_rbi)
+      assert_equal(exp, parse(rbi).flatten.to_rbi)
     end
   end
 end

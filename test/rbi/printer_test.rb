@@ -14,7 +14,7 @@ class RBI
     end
 
     def test_parse_empty_comment
-      assert_rbi_equals("", "# typed: true")
+      assert_rbi_equal("", "# typed: true")
     end
 
     def test_parse_comments
@@ -86,7 +86,7 @@ class RBI
         # main
         def main; end
       RBI
-      assert_rbi_equals(exp, rbi)
+      assert_rbi_equal(exp, rbi)
     end
 
     # Scopes

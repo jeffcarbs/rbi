@@ -1,4 +1,4 @@
-# typed: true
+# typed: strict
 # frozen_string_literal: true
 $LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
 require 'rbi'
@@ -13,13 +13,13 @@ class RBI
     end
 
     sig { params(exp: String, string: String).void }
-    def assert_rbi_equals(exp, string)
+    def assert_rbi_equal(exp, string)
       T.unsafe(self).assert_equal(exp, parse(string).to_rbi)
     end
 
     sig { params(string: String).void }
     def assert_rbi_same(string)
-      assert_rbi_equals(string, string)
+      assert_rbi_equal(string, string)
     end
   end
 end

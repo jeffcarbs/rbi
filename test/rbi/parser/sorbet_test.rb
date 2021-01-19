@@ -7,7 +7,7 @@ class RBI
   module Parser
     class Sorbet
       class ParserTest < Minitest::Test
-        extend T::Sig
+        include TestHelper
 
         def test_parse_empty
           assert_rbi_same("")
@@ -67,7 +67,7 @@ class RBI
             module A::B::C; end
             module A::B; end
           RBI
-          assert_rbi_equals(exp, rbi)
+          assert_rbi_equal(exp, rbi)
         end
 
         def test_parse_classes
@@ -88,7 +88,7 @@ class RBI
             class A::B::C < A; end
             class A::B; end
           RBI
-          assert_rbi_equals(exp, rbi)
+          assert_rbi_equal(exp, rbi)
         end
 
         def test_parse_consts
@@ -160,19 +160,8 @@ class RBI
 
         private
 
-        sig { params(string: String).returns(T.nilable(String)) }
-        def parse_string(string)
-          RBI.from_string(string, parser: Sorbet.new)&.to_rbi
-        end
-
-        sig { params(exp: String, string: String).void }
-        def assert_rbi_equals(exp, string)
-          T.unsafe(self).assert_equal(exp, parse_string(string))
-        end
-
-        sig { params(string: String).void }
-        def assert_rbi_same(string)
-          assert_rbi_equals(string, string)
+        def parse(string)
+          RBI.from_string(string, parser: Sorbet.new)
         end
       end
     end

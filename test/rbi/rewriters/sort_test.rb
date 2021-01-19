@@ -27,7 +27,7 @@ class RBI
 
           def a; end
         RBI
-        assert_equal(<<~EXP, rbi.to_rbi)
+        assert_equal(<<~EXP, rbi)
           class A; end
           class B; end
 
@@ -49,7 +49,7 @@ class RBI
       private
 
       def sort(rbi)
-        parse(rbi).sort
+        parse(rbi).sort.to_rbi
       end
     end
   end
