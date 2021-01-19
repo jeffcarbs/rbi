@@ -611,7 +611,13 @@ class RBI
       @body = T.let([], T::Array[Sig::Builder])
       @body << Sig::Abstract.new if is_abstract
       @body << Sig::Params.new(params) if params
-      @body << Sig::Returns.new(returns) if returns
+      if returns
+        if returns == "void"
+          @body << Sig::Void.new
+        else
+          @body << Sig::Returns.new(returns)
+        end
+      end
     end
 
     sig { params(node: Sig::Builder).void }

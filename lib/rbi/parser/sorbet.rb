@@ -173,7 +173,7 @@ class RBI
           when "interface!"
             @current_scope << Interface.new
           when "mixes_in_class_methods"
-            @current_scope << MixesInClassDefs.new(*make_args(obj["args"]))
+            @current_scope << MixesInClassMethods.new(*make_args(obj["args"]))
           when "public"
             @current_scope << Public.new
           when "prepend"
@@ -282,17 +282,17 @@ class RBI
             name = node["method"]
             case name
             when "void"
-              @current << Returns.new("void")
+              @current << Sig::Void.new
             when "returns"
-              @current << Returns.new(ExpBuilder.build(node["args"][0]))
+              @current << Sig::Returns.new(ExpBuilder.build(node["args"][0]))
             when "params"
-              @current << Params.new(node["args"][0]["pairs"].map do |child|
+              @current << Sig::Params.new(node["args"][0]["pairs"].map do |child|
                 name = child["key"]["val"]
                 type = ExpBuilder.build(child["value"])
                 Param.new(name, type: type)
               end)
             when "abstract"
-              @current << SAbstract.new
+              @current << Sig::Abstract.new
             end
           end
         end

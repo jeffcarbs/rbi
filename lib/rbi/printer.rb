@@ -352,7 +352,7 @@ class RBI
       v.printt(v.colorize(method.to_s, :yellow))
       unless names.empty?
         v.print(v.paren_attrs ? "(" : " ")
-        v.print(names.map { |name| ":#{v.colorize(method.to_s, :light_magenta)}" }.join(", "))
+        v.print(names.map { |name| ":#{v.colorize(name.to_s, :light_magenta)}" }.join(", "))
         v.print(v.paren_attrs ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
