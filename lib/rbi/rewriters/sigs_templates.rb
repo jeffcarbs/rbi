@@ -6,9 +6,10 @@ class RBI
 
   sig { returns(RBI) }
   def sigs_templates
+    rbi = collect_sigs
     v = Rewriters::SigTemplates.new
-    v.add_templates(self)
-    self
+    v.add_templates(rbi)
+    rbi
   end
 
   module Rewriters

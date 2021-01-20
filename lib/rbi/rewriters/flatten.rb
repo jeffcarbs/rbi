@@ -22,6 +22,7 @@ class RBI
       def initialize
         super
         @rbi = T.let(RBI.new, RBI)
+        @scope_stack = T.let([@rbi.root], T::Array[Scope])
       end
 
       sig { params(rbi: RBI).void }
@@ -33,17 +34,25 @@ class RBI
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
+        return unless node
+        scope = T.must(@scope_stack.last)
+
         case node
         when CBase
-          visit_all(node.body.dup)
-          @rbi.root.concat(node.body)
-        when Module, Class
-          visit_all(node.body.dup)
-          node.name = node.qualified_name
-          @rbi.root << node
+          visit_all(node.body)
+        when Module, Class, SClass
+          copy = node.dup_empty
+          copy.name = node.qualified_name
+          @scope_stack << copy
+          visit_all(node.body)
+          @scope_stack.pop
+          @rbi.root << copy
         when Const
-          node.name = node.qualified_name
-          @rbi.root << node
+          copy = node.dup
+          copy.name = node.qualified_name
+          @rbi.root << copy
+        when Stmt
+          scope << node.dup
         end
       end
     end

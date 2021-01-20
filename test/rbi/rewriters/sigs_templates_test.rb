@@ -89,7 +89,7 @@ class RBI
     private
 
     def assert_tpl_sigs_equal(exp, rbi)
-      assert_equal(exp, parse(rbi).collect_sigs.sigs_templates.to_rbi)
+      assert_equal(exp, parse(rbi).sigs_templates.to_rbi)
     end
   end
 end

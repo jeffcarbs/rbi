@@ -6,9 +6,10 @@ class RBI
 
   sig { returns(RBI) }
   def collect_sigs
+    rbi = dup
     v = Rewriters::CollectSigs.new
-    v.collect(self)
-    self
+    v.collect(rbi)
+    rbi
   end
 
   module Rewriters
@@ -33,7 +34,7 @@ class RBI
         case node
         when Module, Class
           @sigs.clear
-          visit_all(node.body)
+          visit_all(node.body.dup)
           @sigs.clear
         when Def
           node.sigs.concat(@sigs)
@@ -43,6 +44,7 @@ class RBI
           @sigs.clear
         when Sig
           @sigs << node
+          T.must(node.parent_scope).body.delete(node)
         end
       end
     end

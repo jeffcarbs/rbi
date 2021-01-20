@@ -6,9 +6,10 @@ class RBI
 
   sig { returns(RBI) }
   def sort
+    rbi = dup
     v = Rewriters::Sort.new
-    v.sort(self)
-    self
+    v.sort(rbi)
+    rbi
   end
 
   module Rewriters
