@@ -33,6 +33,7 @@ require 'rbi/rewriters/merge'
 require 'rbi/rewriters/sort'
 
 require 'rbi/validators/validator'
+require 'rbi/validators/doc'
 require 'rbi/validators/duplicates'
 require 'rbi/validators/sigs'
 require 'rbi/validators'

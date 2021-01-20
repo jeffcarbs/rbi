@@ -21,7 +21,9 @@ class RBI
   sig { returns(T::Array[Validator]) }
   def self.default_validators
     [
-      Validator::Duplicates.new
+      Validator::Doc.new,
+      Validator::Duplicates.new,
+      Validator::Sigs.new,
     ]
   end
 end
