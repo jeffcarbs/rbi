@@ -11,6 +11,8 @@ class RBI
       color: T::Boolean,
       show_locs: T::Boolean,
       show_comments: T::Boolean,
+      max_len: Integer,
+      fold_sigs: T::Boolean,
       fold_empty_scopes: T::Boolean,
       paren_attrs: T::Boolean,
       paren_includes: T::Boolean,
@@ -24,6 +26,8 @@ class RBI
     color: false,
     show_locs: false,
     show_comments: true,
+    max_len: 120,
+    fold_sigs: true,
     fold_empty_scopes: true,
     paren_attrs: false,
     paren_includes: false,
@@ -37,6 +41,8 @@ class RBI
       color: color,
       show_locs: show_locs,
       show_comments: show_comments,
+      max_len: max_len,
+      fold_sigs: fold_sigs,
       fold_empty_scopes: fold_empty_scopes,
       paren_attrs: paren_attrs,
       paren_includes: paren_includes,
@@ -58,6 +64,12 @@ class RBI
 
     sig { returns(T::Boolean) }
     attr_reader :show_comments
+
+    sig { returns(Integer) }
+    attr_reader :max_len
+
+    sig { returns(T::Boolean) }
+    attr_reader :fold_sigs
 
     sig { returns(T::Boolean) }
     attr_reader :fold_empty_scopes
@@ -81,6 +93,8 @@ class RBI
         color: T::Boolean,
         show_locs: T::Boolean,
         show_comments: T::Boolean,
+        max_len: Integer,
+        fold_sigs: T::Boolean,
         fold_empty_scopes: T::Boolean,
         paren_attrs: T::Boolean,
         paren_includes: T::Boolean,
@@ -94,6 +108,8 @@ class RBI
       color: false,
       show_locs: false,
       show_comments: true,
+      max_len: 120,
+      fold_sigs: true,
       fold_empty_scopes: true,
       paren_attrs: false,
       paren_includes: false,
@@ -106,11 +122,14 @@ class RBI
       @color = color
       @show_locs = show_locs
       @show_comments = show_comments
+      @max_len = max_len
+      @fold_sigs = fold_sigs
       @fold_empty_scopes = fold_empty_scopes
       @paren_attrs = paren_attrs
       @paren_includes = paren_includes
       @paren_mixes = paren_mixes
       @paren_tprops = paren_tprops
+      @fold_sig = T.let(false, T::Boolean)
     end
 
     # Printing
@@ -198,6 +217,9 @@ class RBI
       )
       false
     end
+
+    sig { returns(T::Boolean) }
+    attr_accessor :fold_sig
   end
 
   class Node
@@ -432,16 +454,36 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
-      v.printt(v.colorize("sig {", :light_black))
+      v.fold_sig = v.fold_sigs && true # TODO size
+      if v.fold_sig
+        v.printt(v.colorize("sig {", :light_black))
+      else
+        v.printl(v.colorize("sig do", :light_black))
+        v.indent
+      end
+      was_indented = false
       unless body.empty?
-        v.print(" ")
+        v.print(" ") if v.fold_sig
         body.each_with_index do |builder, index|
+          v.printt unless v.fold_sig
           v.print(".") if index > 0
           v.visit(builder)
+          v.printn unless v.fold_sig
+          if !v.fold_sig && builder.is_a?(TypeParameters)
+            was_indented = true
+            v.indent
+          end
         end
-        v.print(" ")
+        v.print(" ") if v.fold_sig
       end
-      v.printn(v.colorize("}", :light_black))
+      if v.fold_sig
+        v.printn(v.colorize("}", :light_black))
+      else
+        v.dedent if was_indented
+        v.dedent
+        v.printl(v.colorize("end", :light_black))
+      end
+      v.fold_sig = false
     end
 
     class Abstract
@@ -479,9 +521,21 @@ class RBI
         v.print(v.colorize('params', :light_black))
         unless params.empty?
           v.print(v.colorize('(', :light_black))
+          v.printn unless v.fold_sig
+          v.indent
           params.each_with_index do |param, index|
-            v.print(v.colorize(', ', :light_black)) if index > 0
+            if index > 0
+              v.print(v.colorize(',', :light_black))
+              v.print(" ") if v.fold_sig
+              v.printn unless v.fold_sig
+            end
+            v.printt unless v.fold_sig
             v.print(v.colorize("#{param.name}: #{param.type}", :light_black))
+          end
+          v.dedent
+          unless v.fold_sig
+            v.printn
+            v.printt
           end
           v.print(v.colorize(')', :light_black))
         end

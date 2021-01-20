@@ -282,5 +282,35 @@ class RBI
         def foo; end # -:19:0-19:12
       EXP
     end
+
+    # Options
+
+    def test_opt_fold_sig
+      rbi = <<~RBI
+        sig { void }
+        sig { type_parameters(:A, :B).params(a: T::Array[T.type_parameter(:A)], fa: T.proc.params(item: T.type_parameter(:A)).returns(T.untyped), b: T::Array[T.type_parameter(:B)], fb: T.proc.params(item: T.type_parameter(:B)).returns(T.untyped)).returns(T::Array[[T.type_parameter(:A), T.type_parameter(:B)]]) }
+      RBI
+      assert_rbi_same(rbi, opts: {fold_sigs: true})
+      rbi = <<~RBI
+        sig do
+          void
+        end
+        def foo; end
+
+        sig do
+          type_parameters(:A, :B)
+            .params(
+              a: T::Array[T.type_parameter(:A)],
+              fa: T.proc.params(item: T.type_parameter(:A)).returns(T.untyped),
+              b: T::Array[T.type_parameter(:B)],
+              fb: T.proc.params(item: T.type_parameter(:B)).returns(T.untyped)
+            )
+            .returns(T::Array[[T.type_parameter(:A), T.type_parameter(:B)]])
+        end
+      RBI
+      assert_rbi_same(rbi, opts: {fold_sigs: false})
+      rbi = <<~RBI
+      RBI
+    end
   end
 end
