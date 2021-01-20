@@ -30,6 +30,7 @@ require 'rbi/rewriters/base'
 require 'rbi/rewriters/collect_sigs'
 require 'rbi/rewriters/flatten'
 require 'rbi/rewriters/merge'
+require 'rbi/rewriters/sigs_templates'
 require 'rbi/rewriters/sort'
 
 require 'rbi/validators/validator'

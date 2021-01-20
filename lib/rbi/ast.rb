@@ -295,6 +295,18 @@ class RBI
       Sig.new(params: params.empty? ? nil : params, returns: return_type)
     end
 
+    sig { returns(Sig) }
+    def template_sig
+      sig = Sig.new
+      unless params.empty?
+        sig << Sig::Params.new(
+          params.map { |param| Param.new(param.name, type: "T.untyped") }
+        )
+      end
+      sig << Sig::Returns.new("T.untyped")
+      sig
+    end
+
     sig { returns(String) }
     def qualified_name
       "#{parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
@@ -437,6 +449,9 @@ class RBI
       @sigs = T.let([], T::Array[Sig])
     end
 
+    sig { abstract.returns(Sig) }
+    def template_sig; end
+
     sig { returns(T::Array[String]) }
     def names
       args
@@ -451,6 +466,13 @@ class RBI
       super(:attr_reader, names: [name.to_s, *names], loc: loc)
       @sigs << Sig.new(returns: type) if type
     end
+
+    sig { override.returns(Sig) }
+    def template_sig
+      sig = Sig.new
+      sig << Sig::Returns.new("T.untyped")
+      sig
+    end
   end
 
   class AttrWriter < Attr
@@ -463,6 +485,18 @@ class RBI
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: "void") if type
     end
+
+    sig { override.returns(Sig) }
+    def template_sig
+      sig = Sig.new
+      unless args.empty?
+        sig << Sig::Params.new(
+          args.map { |param| Param.new(param, type: "T.untyped") }
+        )
+      end
+      sig << Sig::Void.new
+      sig
+    end
   end
 
   class AttrAccessor < Attr
@@ -474,6 +508,18 @@ class RBI
       @sigs << Sig.new(params: [
         Param.new(T.must(self.names.first&.to_s), type: type),
       ], returns: type) if type
+    end
+
+    sig { override.returns(Sig) }
+    def template_sig
+      sig = Sig.new
+      unless args.empty?
+        sig << Sig::Params.new(
+          args.map { |param| Param.new(param, type: "T.untyped") }
+        )
+      end
+      sig << Sig::Returns.new("T.untyped")
+      sig
     end
   end
 
