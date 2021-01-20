@@ -294,6 +294,7 @@ class RBI
         sig { returns(T.nilable(String)) }
         sig { params(requested_generators: T::Array[String]).returns(T.proc.params(klass: Class).returns(T::Boolean)) }
         sig { type_parameters(:U).params(step: Integer, _blk: T.proc.returns(T.type_parameter(:U))).returns(T.type_parameter(:U)) }
+        sig { type_parameters(:A, :B).params(a: T::Array[T.type_parameter(:A)], fa: T.proc.params(item: T.type_parameter(:A)).returns(T.untyped), b: T::Array[T.type_parameter(:B)], fb: T.proc.params(item: T.type_parameter(:B)).returns(T.untyped)).returns(T::Array[[T.type_parameter(:A), T.type_parameter(:B)]]) }
         def foo; end
       RBI
       assert_rbi_same(rbi)

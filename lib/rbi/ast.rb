@@ -668,17 +668,17 @@ class RBI
     class TypeParameters < Builder
       extend T::Sig
 
-      sig { returns(T::Array[Param]) }
+      sig { returns(T::Array[String]) }
       attr_reader :params
 
       sig do
         params(
-          params: T::Array[Param],
+          params: T::Array[String],
           loc: T.nilable(Loc)
         ).void
       end
       def initialize(params = [], loc: nil)
-        super(:type_parameter, loc: loc)
+        super(:type_parameter, args: params, loc: loc)
         @params = params
       end
     end

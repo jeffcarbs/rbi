@@ -101,9 +101,9 @@ class RBI
       class ExpBuilder < SExpVisitor
         extend T::Sig
 
-        sig { params(node: T.nilable(AST::Node)).returns(T.nilable(String)) }
-        def self.visit(node)
-          v = ExpBuilder.new
+        sig { params(node: T.nilable(AST::Node), in_send: T::Boolean).returns(T.nilable(String)) }
+        def self.visit(node, in_send: false)
+          v = ExpBuilder.new(in_send: in_send)
           v.visit(node)
           out = v.out.string
           return nil if out.empty?
@@ -113,10 +113,10 @@ class RBI
         sig { returns(StringIO) }
         attr_accessor :out
 
-        sig { void }
-        def initialize
-          super
-          @insend = T.let(false, T::Boolean)
+        sig { params(in_send: T::Boolean).void }
+        def initialize(in_send: false)
+          super()
+          @in_send = in_send
           @out = T.let(StringIO.new, StringIO)
         end
 
@@ -132,13 +132,11 @@ class RBI
             @out << node.children[1].to_s
             params = node.children[2..-1]
             unless params.empty?
-              @insend = true
               @out << "("
               params.each_with_index do |child, index|
                 @out << ", " if index > 0
                 visit(child)
               end
-              @insend = false
               @out << ")"
             end
           when :const
@@ -163,12 +161,12 @@ class RBI
             end
             @out << "]"
           when :hash
-            @out << "{" unless @insend
+            @out << "{" unless @in_send
             node.children.each_with_index do |child, index|
               @out << ", " if index > 0
               visit(child)
             end
-            @out << "}" unless @insend
+            @out << "}" unless @in_send
           when :pair
             @out << "#{node.children[0].children[0]}: "
             visit(node.children[1])
@@ -237,15 +235,16 @@ class RBI
           when :overridable
             Sig::Overridable.new
           when :type_parameters
-            Sig::TypeParameters.new
+            symbols = node.children[2..-1].map { |child| child.children[0] }
+            Sig::TypeParameters.new(symbols)
           when :params
             Sig::Params.new(node.children[2].children.map do |child|
               name = child.children[0].children[0].to_s
-              type = ExpBuilder.visit(child.children[1])
+              type = ExpBuilder.visit(child.children[1], in_send: true)
               Param.new(name, type: type)
             end)
           when :returns
-            Sig::Returns.new(ExpBuilder.visit(node.children[2]))
+            Sig::Returns.new(ExpBuilder.visit(node.children[2], in_send: true))
           when :void
             Sig::Void.new
           else

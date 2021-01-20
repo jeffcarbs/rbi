@@ -9,12 +9,12 @@ class RBI
       include TestHelper
 
       def test_validate_empty
-        errors = validate("")
+        errors = validate_dups("")
         assert_empty(errors)
       end
 
       def test_validate_accept_scopes_redefinitions_if_only_namespacing
-        errors = validate(<<~RBI)
+        errors = validate_dups(<<~RBI)
           class A
             def foo; end
 
@@ -37,7 +37,7 @@ class RBI
       end
 
       def test_validate_reject_scopes_redefinitions_if_reopening
-        errors = validate(<<~RBI)
+        errors = validate_dups(<<~RBI)
           class A
             def foo; end
 
@@ -74,7 +74,7 @@ class RBI
       end
 
       def test_validate_reject_scopes_redefinitions_if_empty
-        errors = validate(<<~RBI)
+        errors = validate_dups(<<~RBI)
           class A
             def foo; end
 
@@ -106,9 +106,8 @@ class RBI
 
       private
 
-      def validate_dups(string)
-        rbi = parse(string)
-        RBI.validate([rbi], validators: [Validator::Duplicates.new])
+      def validate_dups(rbi)
+        validate(rbi, validators: [Validator::Duplicates.new])
       end
     end
   end

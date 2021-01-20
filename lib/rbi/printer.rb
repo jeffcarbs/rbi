@@ -476,12 +476,15 @@ class RBI
 
       sig { override.params(v: Printer).void }
       def accept_printer(v)
-        v.print(v.colorize('params(', :light_black))
-        params.each_with_index do |param, index|
-          v.print(v.colorize(', ', :light_black)) if index > 0
-          v.print(v.colorize("#{param.name}: #{param.type}", :light_black))
+        v.print(v.colorize('params', :light_black))
+        unless params.empty?
+          v.print(v.colorize('(', :light_black))
+          params.each_with_index do |param, index|
+            v.print(v.colorize(', ', :light_black)) if index > 0
+            v.print(v.colorize("#{param.name}: #{param.type}", :light_black))
+          end
+          v.print(v.colorize(')', :light_black))
         end
-        v.print(v.colorize(')', :light_black))
       end
     end
 
@@ -500,6 +503,14 @@ class RBI
       sig { override.params(v: Printer).void }
       def accept_printer(v)
         v.print(v.colorize("type_parameters", :light_black))
+        unless params.empty?
+          v.print(v.colorize('(', :light_black))
+          params.each_with_index do |param, index|
+            v.print(v.colorize(', ', :light_black)) if index > 0
+            v.print(v.colorize(":#{param}", :light_black))
+          end
+          v.print(v.colorize(')', :light_black))
+        end
       end
     end
 
