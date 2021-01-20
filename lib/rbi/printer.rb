@@ -11,7 +11,7 @@ class RBI
       color: T::Boolean,
       show_locs: T::Boolean,
       show_comments: T::Boolean,
-      max_len: Integer,
+      max_len: T.nilable(Integer),
       fold_sigs: T::Boolean,
       fold_empty_scopes: T::Boolean,
       paren_attrs: T::Boolean,
@@ -26,7 +26,7 @@ class RBI
     color: false,
     show_locs: false,
     show_comments: true,
-    max_len: 120,
+    max_len: nil,
     fold_sigs: true,
     fold_empty_scopes: true,
     paren_attrs: false,
@@ -65,7 +65,7 @@ class RBI
     sig { returns(T::Boolean) }
     attr_reader :show_comments
 
-    sig { returns(Integer) }
+    sig { returns(T.nilable(Integer)) }
     attr_reader :max_len
 
     sig { returns(T::Boolean) }
@@ -93,7 +93,7 @@ class RBI
         color: T::Boolean,
         show_locs: T::Boolean,
         show_comments: T::Boolean,
-        max_len: Integer,
+        max_len: T.nilable(Integer),
         fold_sigs: T::Boolean,
         fold_empty_scopes: T::Boolean,
         paren_attrs: T::Boolean,
@@ -108,7 +108,7 @@ class RBI
       color: false,
       show_locs: false,
       show_comments: true,
-      max_len: 120,
+      max_len: nil,
       fold_sigs: true,
       fold_empty_scopes: true,
       paren_attrs: false,
@@ -453,15 +453,25 @@ class RBI
     sig { override.params(v: Printer).void }
     def accept_printer(v)
       v.visit_all(comments)
+      if v.fold_sigs
+        max_len = v.max_len
+        if max_len
+          try = StringIO.new
+          tv = Printer.new(fold_sigs: true, max_len: nil, out: try)
+          tv.visit(self)
+          v.fold_sig = try.string.size < max_len
+        else
+          v.fold_sig = true
+        end
+      end
       v.printl("# #{loc}") if loc && v.show_locs
-      v.fold_sig = v.fold_sigs && true # TODO size
       if v.fold_sig
         v.printt(v.colorize("sig {", :light_black))
       else
         v.printl(v.colorize("sig do", :light_black))
         v.indent
       end
-      was_indented = false
+      was_indented = T.let(false, T::Boolean)
       unless body.empty?
         v.print(" ") if v.fold_sig
         body.each_with_index do |builder, index|

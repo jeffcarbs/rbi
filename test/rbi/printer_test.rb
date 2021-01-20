@@ -312,5 +312,31 @@ class RBI
       rbi = <<~RBI
       RBI
     end
+
+    def test_opt_fold_sig_and_maxlen
+      rbi = <<~RBI
+        sig { void }
+        sig { type_parameters(:A, :B).params(a: T::Array[T.type_parameter(:A)], fa: T.proc.params(item: T.type_parameter(:A)).returns(T.untyped), b: T::Array[T.type_parameter(:B)], fb: T.proc.params(item: T.type_parameter(:B)).returns(T.untyped)).returns(T::Array[[T.type_parameter(:A), T.type_parameter(:B)]]) }
+      RBI
+      assert_rbi_same(rbi, opts: {fold_sigs: true, max_len: nil})
+      rbi = <<~RBI
+        sig { void }
+        def foo; end
+
+        sig do
+          type_parameters(:A, :B)
+            .params(
+              a: T::Array[T.type_parameter(:A)],
+              fa: T.proc.params(item: T.type_parameter(:A)).returns(T.untyped),
+              b: T::Array[T.type_parameter(:B)],
+              fb: T.proc.params(item: T.type_parameter(:B)).returns(T.untyped)
+            )
+            .returns(T::Array[[T.type_parameter(:A), T.type_parameter(:B)]])
+        end
+      RBI
+      assert_rbi_same(rbi, opts: {fold_sigs: true, max_len: 80})
+      rbi = <<~RBI
+      RBI
+    end
   end
 end
