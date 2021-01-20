@@ -129,13 +129,14 @@ class RBI
               visit(node.children[0])
               @out << "."
             end
-            @out << node.children[1].to_s
+            recv = node.children[1].to_s
+            @out << recv
             params = node.children[2..-1]
             unless params.empty?
               @out << "("
               params.each_with_index do |child, index|
                 @out << ", " if index > 0
-                visit(child)
+                @out << ExpBuilder.visit(child, in_send: child.type == :hash)
               end
               @out << ")"
             end
@@ -240,11 +241,11 @@ class RBI
           when :params
             Sig::Params.new(node.children[2].children.map do |child|
               name = child.children[0].children[0].to_s
-              type = ExpBuilder.visit(child.children[1], in_send: true)
+              type = ExpBuilder.visit(child.children[1])
               Param.new(name, type: type)
             end)
           when :returns
-            Sig::Returns.new(ExpBuilder.visit(node.children[2], in_send: true))
+            Sig::Returns.new(ExpBuilder.visit(node.children[2]))
           when :void
             Sig::Void.new
           else
