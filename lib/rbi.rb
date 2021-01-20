@@ -36,6 +36,7 @@ require 'rbi/validators/validator'
 require 'rbi/validators/doc'
 require 'rbi/validators/duplicates'
 require 'rbi/validators/sigs'
+require 'rbi/validators/tsig'
 require 'rbi/validators'
 
 require 'rbi/version'
