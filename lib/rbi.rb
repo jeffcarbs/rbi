@@ -19,6 +19,7 @@ require 'rbi/printer'
 
 require 'rbi/error'
 require 'rbi/logger'
+require 'rbi/progress'
 
 require 'rbi/parser/base'
 require 'rbi/parser/whitequark'
@@ -33,6 +34,7 @@ require 'rbi/rewriters/sort'
 
 require 'rbi/validators/validator'
 require 'rbi/validators/duplicates'
+require 'rbi/validators/sigs'
 require 'rbi/validators'
 
 require 'rbi/version'

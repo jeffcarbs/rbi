@@ -9,18 +9,106 @@ class RBI
       include TestHelper
 
       def test_validate_empty
-        status, errors = validate("")
-        assert(status)
+        errors = validate("")
         assert_empty(errors)
       end
 
-      def test_validate
-        status, errors = validate(<<~RBI)
-          class A; end
-          class A; end
+      def test_validate_accept_scopes_redefinitions_if_only_namespacing
+        errors = validate(<<~RBI)
+          class A
+            def foo; end
+
+            module B::C
+              def bar; end
+            end
+          end
+
+          class A
+            module B
+              module C
+                module D
+                  def bar; end
+                end
+              end
+            end
+          end
         RBI
-        refute(status)
-        assert_equal(["Duplicated definitions for `::A`"], errors.map(&:message))
+        assert_empty(errors)
+      end
+
+      def test_validate_reject_scopes_redefinitions_if_reopening
+        errors = validate(<<~RBI)
+          class A
+            def foo; end
+
+            module B
+              include X
+              module C
+                attr_accessor :bar
+                class << self
+                  DD = D
+                end
+              end
+            end
+          end
+
+          class A
+            include X
+            module B
+              BB = B
+              module C
+                def foo; end
+                class << self
+                  attr_reader :bar
+                end
+              end
+            end
+          end
+        RBI
+        assert_equal([
+          "Duplicated definitions for `::A`. Defined here:",
+          "Duplicated definitions for `::A::B`. Defined here:",
+          "Duplicated definitions for `::A::B::C`. Defined here:",
+          "Duplicated definitions for `::A::B::C::<self>`. Defined here:",
+        ], errors.map(&:message))
+      end
+
+      def test_validate_reject_scopes_redefinitions_if_empty
+        errors = validate(<<~RBI)
+          class A
+            def foo; end
+
+            module B::C
+              def bar; end
+            end
+          end
+
+          class A; end
+
+          class A
+            module B
+              module C
+                module D
+                end
+              end
+            end
+          end
+
+          module A::B::C; end
+        RBI
+        assert_equal([
+          "Duplicated definitions for `::A`. Defined here:",
+          "Duplicated definitions for `::A::B`. Defined here:",
+          "Duplicated definitions for `::A::B::C`. Defined here:",
+          "Duplicated definitions for `::A::B::C::<self>`. Defined here:",
+        ], errors.map(&:message))
+      end
+
+      private
+
+      def validate_dups(string)
+        rbi = parse(string)
+        RBI.validate([rbi], validators: [Validator::Duplicates.new])
       end
     end
   end

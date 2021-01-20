@@ -23,6 +23,11 @@ class RBI
       @sections << section
     end
 
+    sig { params(message: String, loc: T.nilable(Loc)).void }
+    def add_section(message, loc: nil)
+      self << Section.new(message, loc: loc)
+    end
+
     class Section
       extend T::Sig
 
@@ -53,7 +58,7 @@ class RBI
       error.sections.each do |section|
         loc = section.loc
         puts(ERROR, "\n\t#{loc}: #{colorize_message(section.message, :yellow)}")
-        show_source(loc, indent_level: 2) if loc
+        show_source(loc, indent_level: 1) if loc
       end
     end
 
@@ -70,9 +75,9 @@ class RBI
       string = File.read(file)
       lines = T.must(string.lines[(T.must(loc.range&.from&.line) - 1)..(T.must(loc.range&.to&.line) - 1)])
       lines = [
-        *lines[1, 2],
+        *lines[..2],
         colorize("#{' ' * T.must(lines[2]&.index(/[^ ]/))}...", :light_black),
-        *lines[-3..-2],
+        *lines[-3..],
       ] if lines.size > 10
       lines.each do |line|
         puts(ERROR, "#{indent}#{colorize(line.rstrip, :light_black)}")
@@ -81,7 +86,27 @@ class RBI
 
     sig { params(message: String, color: Symbol).returns(String) }
     def colorize_message(message, color)
-      colorize(message, color).gsub(/`([^`]+)`/, colorize("\\1", :cyan))
+      return message unless self.color
+      res = StringIO.new
+      buf = StringIO.new
+      inside = T.let(false, T::Boolean)
+      message.chars.each do |char|
+        if char == '`'
+          if inside
+            res << colorize(buf.string, :cyan)
+            buf = StringIO.new
+            inside = false
+          else
+            res << colorize(buf.string, color)
+            buf = StringIO.new
+            inside = true
+          end
+          next
+        end
+        buf << char
+      end
+      res << colorize(buf.string, color)
+      res.string
     end
   end
 end

@@ -29,9 +29,9 @@ class RBI
 
       files = T.unsafe(Parser).list_files(*paths)
       rbis = parse(files)
-      status, errors = RBI.validate(rbis)
+      errors = RBI.validate(rbis)
 
-      if status
+      if errors.empty?
         logger.say("No errors. Good job!")
         return
       end
@@ -99,12 +99,17 @@ class RBI
 
       def parse(files)
         logger = self.logger
+
         index = 0
         files.map do |file|
           logger.debug("Parsing #{file} (#{index}/#{files.size})")
           index += 1
           T.must(RBI.from_file(file))
         end
+      end
+
+      def verbose
+        T.unsafe(self).options[:verbose]
       end
     end
   end

@@ -8,23 +8,45 @@ class RBI
     class Duplicates < Validator
       extend T::Sig
 
-      sig { params(index: Index).void }
-      def initialize(index)
-        super()
-        @index = index
+      sig { override.params(rbis: T::Array[RBI]).returns(T::Array[Error]) }
+      def validate(rbis)
+        errors = T.let([], T::Array[Error])
+        index = RBI.index(rbis)
+        index.each do |id, nodes|
+          next unless nodes.size > 1
+          first = T.must(nodes.first)
+
+          not_scopes = nodes.select { |node| !node.is_a?(Scope) || node.is_a?(Def) }
+          unless not_scopes.empty?
+            error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
+            nodes.each do |node|
+              next if node == first
+              error.add_section("defined again here:", loc: node.loc)
+            end
+            errors << error
+          end
+
+          scopes = nodes - not_scopes
+          unless scopes.empty?
+            sizes = nodes.map do |node|
+              T.cast(node, Scope).body.select{ |child| !child.is_a?(Scope) || child.is_a?(Def) }.size
+            end
+            if sizes.select{ |size| size != 0 }.size > 1
+              error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
+              nodes.each do |node|
+                next if node == first
+                error.add_section("defined again here:", loc: node.loc)
+              end
+              errors << error
+            end
+          end
+        end
+        errors
       end
 
-      sig { override.returns(T::Boolean) }
-      def validate
-        @index.each do |id, nodes|
-          next unless nodes.size > 1
-          error = Error.new("Duplicated definitions for `#{id}`", loc: nodes.first&.loc)
-          nodes.each do |node|
-            error << RBI::Error::Section.new("defined here:", loc: node.loc)
-          end
-          @errors << error
-        end
-        errors.empty?
+      sig { override.params(node: T.nilable(Node)).void }
+      def visit(node)
+        # not used
       end
     end
   end

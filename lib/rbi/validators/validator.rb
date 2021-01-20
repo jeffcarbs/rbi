@@ -2,22 +2,14 @@
 # frozen_string_literal: true
 
 class RBI
-  class Validator
+  class Validator < Visitor
     extend T::Helpers
     extend T::Sig
 
     abstract!
 
-    sig { returns(T::Array[Error]) }
-    attr_reader :errors
-
-    sig { void }
-    def initialize
-      @errors = T.let([], T::Array[Error])
-    end
-
-    sig { abstract.returns(T::Boolean) }
-    def validate; end
+    sig { abstract.params(rbis: T::Array[RBI]).returns(T::Array[Error]) }
+    def validate(rbis); end
 
     class Error < RBI::Error; end
   end
