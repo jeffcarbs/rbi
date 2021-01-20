@@ -61,7 +61,7 @@ class RBI
         assert_equal([
           "Method `foo` declared without documentation",
           "Method `bar` declared without documentation",
-          "Method `foo` declared without documentation"
+          "Method `foo` declared without documentation",
         ], errors.map(&:message))
       end
 

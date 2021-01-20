@@ -46,6 +46,11 @@ class RBI
       @index.each(&block)
     end
 
+    sig { returns(T::Array[String]) }
+    def keys
+      @index.keys
+    end
+
     sig { returns(T::Boolean) }
     def empty?
       @index.empty?

@@ -92,7 +92,7 @@ class RBI
 
     sig { params(node: Stmt).void }
     def <<(node)
-      raise if node.parent_scope && !node.parent_scope&.body&.delete(node)
+      # raise if node.parent_scope && !node.parent_scope&.body&.delete(node)
       node.parent_scope = self
       @body << node
     end
@@ -107,6 +107,9 @@ class RBI
       return name if name.start_with?("::")
       "#{parent_scope&.qualified_name}::#{name}"
     end
+
+    sig { abstract.returns(Scope) }
+    def dup_empty; end
 
     sig { returns(String) }
     def to_s
@@ -131,6 +134,11 @@ class RBI
     sig { returns(T::Boolean) }
     def interface?
       body.one? { |child| child.is_a?(Interface) }
+    end
+
+    sig { override.returns(Module) }
+    def dup_empty
+      Module.new(name, loc: loc)
     end
   end
 
@@ -173,6 +181,11 @@ class RBI
     def sealed?
       body.one? { |child| child.is_a?(Sealed) }
     end
+
+    sig { override.returns(Class) }
+    def dup_empty
+      Class.new(name, superclass: superclass, loc: loc)
+    end
   end
 
   class SClass < Scope
@@ -204,6 +217,11 @@ class RBI
     def sealed?
       body.one? { |child| child.is_a?(Sealed) }
     end
+
+    sig { override.returns(SClass) }
+    def dup_empty
+      SClass.new(loc: loc)
+    end
   end
 
   class CBase < Class
@@ -222,6 +240,11 @@ class RBI
     sig { returns(String) }
     def to_s
       "::"
+    end
+
+    sig { override.returns(CBase) }
+    def dup_empty
+      CBase.new
     end
   end
 
@@ -310,6 +333,11 @@ class RBI
     sig { returns(String) }
     def qualified_name
       "#{parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
+    end
+
+    sig { override.returns(Def) }
+    def dup_empty
+      Def.new(name, is_singleton: is_singleton, params: params, return_type: return_type, loc: loc)
     end
 
     sig { returns(String) }
@@ -430,6 +458,11 @@ class RBI
     # Scope generic?
     # Block call?
     # Sig is block call?
+
+    sig { override.returns(Block) }
+    def dup_empty
+      Block.new(name)
+    end
   end
 
   # Attributes

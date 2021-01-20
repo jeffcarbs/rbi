@@ -64,7 +64,7 @@ class RBI
           "Method `foo` defined without a sig",
           "Accessor `B::C#bar` defined without a sig",
           "Method `bar` defined without a sig",
-          "Method `foo` defined without a sig"
+          "Method `foo` defined without a sig",
         ], errors.map(&:message))
       end
 

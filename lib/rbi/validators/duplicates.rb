@@ -27,19 +27,17 @@ class RBI
           end
 
           scopes = nodes - not_scopes
-          unless scopes.empty?
-            sizes = nodes.map do |node|
-              T.cast(node, Scope).body.select{ |child| !child.is_a?(Scope) || child.is_a?(Def) }.size
-            end
-            if sizes.select{ |size| size != 0 }.size > 1
-              error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
-              nodes.each do |node|
-                next if node == first
-                error.add_section("defined again here:", loc: node.loc)
-              end
-              errors << error
-            end
+          next if scopes.empty?
+          sizes = nodes.map do |node|
+            T.cast(node, Scope).body.select { |child| !child.is_a?(Scope) || child.is_a?(Def) }.size
           end
+          next unless sizes.select { |size| size != 0 }.size > 1
+          error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
+          nodes.each do |node|
+            next if node == first
+            error.add_section("defined again here:", loc: node.loc)
+          end
+          errors << error
         end
         errors
       end

@@ -27,9 +27,9 @@ class RBI
       def visit(node)
         case node
         when Scope
-          node.body.each do |node|
-            next unless node.is_a?(Extend) && node.args.first == "T::Sig"
-            @errors << Error.new("`T::Sig` used in RBI:", loc: node.loc)
+          node.body.each do |child|
+            next unless child.is_a?(Extend) && child.args.first == "T::Sig"
+            @errors << Error.new("`T::Sig` used in RBI:", loc: child.loc)
           end
           visit_all(node.body)
         end

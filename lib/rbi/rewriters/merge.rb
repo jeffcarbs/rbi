@@ -33,6 +33,7 @@ class RBI
         super
         @rbi = T.let(RBI.new, RBI)
         @index = T.let(Index.new, Index)
+        @scope_stack = T.let([@rbi.root], T::Array[Scope])
       end
 
       sig { params(rbi: RBI).void }
@@ -44,17 +45,30 @@ class RBI
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
+        return unless node
+
+        prev = @index[@index.id_for(node)].first
+        scope = T.must(@scope_stack.last)
+
         case node
+        when CBase
+          visit_all(node.body)
         when Scope
-          first = @index[@index.id_for(node)].first
-          body = node.body.dup
-          if first.is_a?(Scope)
-            first.concat(node.body)
+          if prev.is_a?(Scope)
+            @scope_stack << prev
           else
-            @index << node
-            @rbi.root << node if node.parent_scope.is_a?(CBase)
+            copy = node.dup_empty
+            scope << copy
+            @index << copy
+            @scope_stack << copy
           end
-          visit_all(body.dup)
+          visit_all(node.body)
+          @scope_stack.pop
+        when Stmt
+          return if prev
+          copy = node.dup
+          scope << copy
+          @index << copy
         end
       end
     end
