@@ -116,6 +116,7 @@ class RBI
         sig { void }
         def initialize
           super
+          @insend = T.let(false, T::Boolean)
           @out = T.let(StringIO.new, StringIO)
         end
 
@@ -131,11 +132,13 @@ class RBI
             @out << node.children[1].to_s
             params = node.children[2..-1]
             unless params.empty?
+              @insend = true
               @out << "("
               params.each_with_index do |child, index|
                 @out << ", " if index > 0
                 visit(child)
               end
+              @insend = false
               @out << ")"
             end
           when :const
@@ -160,12 +163,12 @@ class RBI
             end
             @out << "]"
           when :hash
-            @out << "{"
+            @out << "{" unless @insend
             node.children.each_with_index do |child, index|
               @out << ", " if index > 0
               visit(child)
             end
-            @out << "}"
+            @out << "}" unless @insend
           when :pair
             @out << "#{node.children[0].children[0]}: "
             visit(node.children[1])

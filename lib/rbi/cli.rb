@@ -53,6 +53,7 @@ class RBI
           paren_includes: true,
           paren_mixes: true,
         )
+        next if content_after.empty?
         file1 = "#{file}.f1"
         file2 = "#{file}.f2"
         File.write(file1, content_before.gsub(/\n\n/, "\n"))
