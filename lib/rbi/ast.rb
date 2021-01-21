@@ -17,11 +17,6 @@ class RBI
     @root << node
   end
 
-  sig { params(nodes: T::Array[Stmt]).void }
-  def concat(nodes)
-    nodes.each { |node| self << node }
-  end
-
   class Node
     extend T::Sig
     extend T::Helpers
@@ -92,14 +87,8 @@ class RBI
 
     sig { params(node: Stmt).void }
     def <<(node)
-      # raise if node.parent_scope && !node.parent_scope&.body&.delete(node)
       node.parent_scope = self
       @body << node
-    end
-
-    sig { params(nodes: T::Array[Stmt]).void }
-    def concat(nodes)
-      nodes.each { |node| self << node }
     end
 
     sig { returns(String) }
@@ -188,34 +177,12 @@ class RBI
     end
   end
 
-  class SClass < Scope
+  class SClass < Class
     extend T::Sig
 
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
       super("<self>", loc: loc)
-    end
-
-    sig { returns(T.self_type) }
-    def abstract!
-      body << Abstract.new
-      self
-    end
-
-    sig { returns(T::Boolean) }
-    def abstract?
-      body.one? { |child| child.is_a?(Abstract) }
-    end
-
-    sig { returns(T.self_type) }
-    def sealed!
-      body << Sealed.new
-      self
-    end
-
-    sig { returns(T::Boolean) }
-    def sealed?
-      body.one? { |child| child.is_a?(Sealed) }
     end
 
     sig { override.returns(SClass) }
@@ -289,9 +256,6 @@ class RBI
     sig { returns(T::Array[Param]) }
     attr_reader :params
 
-    sig { returns(T.nilable(String)) }
-    attr_reader :return_type
-
     sig { returns(T::Array[Sig]) }
     attr_reader :sigs
 
@@ -300,22 +264,14 @@ class RBI
         name: String,
         is_singleton: T::Boolean,
         params: T::Array[Param],
-        return_type: T.nilable(String),
         loc: T.nilable(Loc),
       ).void
     end
-    def initialize(name, is_singleton: false, params: [], return_type: nil, loc: nil)
+    def initialize(name, is_singleton: false, params: [], loc: nil)
       super(name, loc: loc)
       @is_singleton = is_singleton
       @params = params
-      @return_type = return_type
       @sigs = T.let([], T::Array[Sig])
-      @sigs << default_sig if params.one?(&:type) || return_type
-    end
-
-    sig { returns(Sig) }
-    def default_sig
-      Sig.new(params: params.empty? ? nil : params, returns: return_type)
     end
 
     sig { returns(Sig) }
@@ -337,7 +293,7 @@ class RBI
 
     sig { override.returns(Def) }
     def dup_empty
-      Def.new(name, is_singleton: is_singleton, params: params, return_type: return_type, loc: loc)
+      Def.new(name, is_singleton: is_singleton, params: params, loc: loc)
     end
 
     sig { returns(String) }
@@ -494,10 +450,9 @@ class RBI
   class AttrReader < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
-    def initialize(name, *names, type: nil, loc: nil)
+    sig { params(name: ::Symbol, names: ::Symbol, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
       super(:attr_reader, names: [name.to_s, *names], loc: loc)
-      @sigs << Sig.new(returns: type) if type
     end
 
     sig { override.returns(Sig) }
@@ -511,12 +466,9 @@ class RBI
   class AttrWriter < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
-    def initialize(name, *names, type: nil, loc: nil)
+    sig { params(name: ::Symbol, names: ::Symbol, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
       super(:attr_writer, names: [name, *names], loc: loc)
-      @sigs << Sig.new(params: [
-        Param.new(T.must(self.names.first&.to_s), type: type),
-      ], returns: "void") if type
     end
 
     sig { override.returns(Sig) }
@@ -535,12 +487,9 @@ class RBI
   class AttrAccessor < Attr
     extend T::Sig
 
-    sig { params(name: ::Symbol, names: ::Symbol, type: T.nilable(String), loc: T.nilable(Loc)).void }
-    def initialize(name, *names, type: nil, loc: nil)
+    sig { params(name: ::Symbol, names: ::Symbol, loc: T.nilable(Loc)).void }
+    def initialize(name, *names, loc: nil)
       super(:attr_accessor, names: [name, *names], loc: loc)
-      @sigs << Sig.new(params: [
-        Param.new(T.must(self.names.first&.to_s), type: type),
-      ], returns: type) if type
     end
 
     sig { override.returns(Sig) }
@@ -741,6 +690,24 @@ class RBI
       sig { params(loc: T.nilable(Loc)).void }
       def initialize(loc: nil)
         super(:overridable, loc: loc)
+      end
+    end
+
+    class Checked < Builder
+      extend T::Sig
+
+      sig { returns(T::Array[String]) }
+      attr_reader :params
+
+      sig do
+        params(
+          params: T::Array[String],
+          loc: T.nilable(Loc)
+        ).void
+      end
+      def initialize(params = [], loc: nil)
+        super(:checked, args: params, loc: loc)
+        @params = params
       end
     end
 

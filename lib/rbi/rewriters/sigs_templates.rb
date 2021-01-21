@@ -6,10 +6,14 @@ class RBI
 
   sig { returns(RBI) }
   def sigs_templates
-    rbi = collect_sigs
+    Rewriters::SigTemplates.new.add_templates(self.collect_sigs)
+    self
+  end
+
+  sig { params(rbis: RBI).void }
+  def self.sigs_templates(*rbis)
     v = Rewriters::SigTemplates.new
-    v.add_templates(rbi)
-    rbi
+    v.visit_all(rbis.collect_sigs.map(&:root))
   end
 
   module Rewriters

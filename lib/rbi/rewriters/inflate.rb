@@ -4,10 +4,15 @@
 class RBI
   extend T::Sig
 
-  sig { returns(RBI) }
-  def inflate
+  sig { params(rbis: RBI).returns(RBI) }
+  def inflate(*rbis)
+    T.unsafe(RBI).inflate(self, *rbis)
+  end
+
+  sig { params(rbis: RBI).returns(RBI) }
+  def self.inflate(*rbis)
     v = Rewriters::Inflate.new
-    v.inflate([self])
+    v.inflate(rbis)
     v.rbi.merge
   end
 

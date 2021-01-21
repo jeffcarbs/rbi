@@ -235,6 +235,9 @@ class RBI
             Sig::Override.new
           when :overridable
             Sig::Overridable.new
+          when :checked
+            symbols = node.children[2..-1].map { |child| child.children[0] }
+            Sig::Checked.new(symbols)
           when :type_parameters
             symbols = node.children[2..-1].map { |child| child.children[0] }
             Sig::TypeParameters.new(symbols)
@@ -249,7 +252,7 @@ class RBI
           when :void
             Sig::Void.new
           else
-            raise "Unhandled #{node}"
+            raise "#{node.location.line}: Unhandled #{node}"
           end
           @current << builder
         end

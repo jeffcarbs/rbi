@@ -6,19 +6,14 @@ class RBI
 
   sig { params(rbis: RBI).returns(RBI) }
   def merge(*rbis)
-    v = Rewriters::Merge.new
-    v.merge(self)
-    rbis.each { |rbi| v.merge(rbi) }
-    v.rbi
+    T.unsafe(RBI).merge(self, *rbis)
   end
 
-  class Scope
-    extend T::Sig
-
-    sig { params(other: Scope).void }
-    def merge(other)
-      concat(other.body)
-    end
+  sig { params(rbis: RBI).returns(RBI) }
+  def self.merge(*rbis)
+    v = Rewriters::Merge.new
+    v.visit_all(rbis.map(&:root))
+    v.rbi
   end
 
   module Rewriters

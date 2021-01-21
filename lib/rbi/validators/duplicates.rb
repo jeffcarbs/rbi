@@ -4,9 +4,15 @@
 class RBI
   extend T::Sig
 
+  # TODO transform as a visitor
   class Validator
     class Duplicates < Validator
       extend T::Sig
+
+      sig { params(scopes_reopening: T::Boolean).void }
+      def initialize(scopes_reopening: true)
+        @scopes_reopening = scopes_reopening
+      end
 
       sig { override.params(rbis: T::Array[RBI]).returns(T::Array[Error]) }
       def validate(rbis)
@@ -26,18 +32,20 @@ class RBI
             errors << error
           end
 
-          scopes = nodes - not_scopes
-          next if scopes.empty?
-          sizes = nodes.map do |node|
-            T.cast(node, Scope).body.select { |child| !child.is_a?(Scope) || child.is_a?(Def) }.size
+          unless @scopes_reopening
+            scopes = nodes - not_scopes
+            next if scopes.empty?
+            sizes = nodes.map do |node|
+              T.cast(node, Scope).body.select { |child| !child.is_a?(Scope) || child.is_a?(Def) }.size
+            end
+            next unless sizes.select { |size| size != 0 }.size > 1
+            error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
+            nodes.each do |node|
+              next if node == first
+              error.add_section("defined again here:", loc: node.loc)
+            end
+            errors << error
           end
-          next unless sizes.select { |size| size != 0 }.size > 1
-          error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
-          nodes.each do |node|
-            next if node == first
-            error.add_section("defined again here:", loc: node.loc)
-          end
-          errors << error
         end
         errors
       end

@@ -280,7 +280,7 @@ class RBI
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("#{v.colorize('class', :blue)} #{v.colorize(name, :cyan)}")
-      v.print(" < #{superclass}") if superclass
+      v.print(" < #{v.colorize(T.must(superclass), :cyan)}") if superclass
       super(v)
     end
   end
@@ -293,7 +293,20 @@ class RBI
       v.visit_all(comments)
       v.printl("# #{loc}") if loc && v.show_locs
       v.printt("#{v.colorize('class', :blue)} << #{v.colorize('self', :magenta)}")
-      super(v)
+      if body.empty?
+        if v.fold_empty_scopes
+          v.printn("; end")
+        else
+          v.printn
+          v.printl(v.colorize("end", :blue))
+        end
+        return
+      end
+      v.printn
+      v.indent
+      v.visit_body(body)
+      v.dedent
+      v.printl(v.colorize("end", :blue))
     end
   end
 
@@ -567,6 +580,23 @@ class RBI
       sig { override.params(v: Printer).void }
       def accept_printer(v)
         v.print(v.colorize("type_parameters", :light_black))
+        unless params.empty?
+          v.print(v.colorize('(', :light_black))
+          params.each_with_index do |param, index|
+            v.print(v.colorize(', ', :light_black)) if index > 0
+            v.print(v.colorize(":#{param}", :light_black))
+          end
+          v.print(v.colorize(')', :light_black))
+        end
+      end
+    end
+
+    class Checked
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("checked", :light_black))
         unless params.empty?
           v.print(v.colorize('(', :light_black))
           params.each_with_index do |param, index|

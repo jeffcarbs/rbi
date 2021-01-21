@@ -4,10 +4,15 @@
 class RBI
   extend T::Sig
 
-  sig { returns(RBI) }
-  def flatten
+  sig { params(rbis: RBI).returns(RBI) }
+  def flatten(*rbis)
+    T.unsafe(RBI).flatten(self, *rbis)
+  end
+
+  sig { params(rbis: RBI).returns(RBI) }
+  def self.flatten(*rbis)
     v = Rewriters::Flatten.new
-    v.flatten(self)
+    v.visit_all(rbis.map(&:root))
     v.rbi
   end
 

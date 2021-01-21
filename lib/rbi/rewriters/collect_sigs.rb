@@ -6,10 +6,15 @@ class RBI
 
   sig { returns(RBI) }
   def collect_sigs
-    rbi = dup
     v = Rewriters::CollectSigs.new
-    v.collect(rbi)
-    rbi
+    v.collect(self)
+    self
+  end
+
+  sig { params(rbis: RBI).void }
+  def self.collect_sigs(*rbis)
+    v = Rewriters::CollectSigs.new
+    v.visit_all(rbis.map(&:root))
   end
 
   module Rewriters

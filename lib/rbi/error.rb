@@ -48,16 +48,19 @@ class RBI
   class Logger
     extend T::Sig
 
-    sig { params(error: Error).void }
-    def show_error(error)
+    sig { params(error: Error, compact: T::Boolean).void }
+    def show_error(error, compact: false)
       loc = error.loc
 
-      puts(ERROR, "\n#{loc}: #{colorize_message(error.message, :red)}")
+      puts(ERROR, "#{loc}: #{colorize_message(error.message, :red)}")
+
+      return if compact
+
       show_source(loc, indent_level: 1) if loc
 
       error.sections.each do |section|
         loc = section.loc
-        puts(ERROR, "\n\t#{loc}: #{colorize_message(section.message, :yellow)}")
+        puts(ERROR, "\t#{loc}: #{colorize_message(section.message, :yellow)}")
         show_source(loc, indent_level: 1) if loc
       end
     end
@@ -82,6 +85,7 @@ class RBI
       lines.each do |line|
         puts(ERROR, "#{indent}#{colorize(line.rstrip, :light_black)}")
       end
+      puts(ERROR, "")
     end
 
     sig { params(message: String, color: Symbol).returns(String) }
