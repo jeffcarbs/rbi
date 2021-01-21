@@ -4,11 +4,11 @@
 class RBI
   extend T::Sig
 
-  sig { params(other: RBI).returns(RBI) }
-  def merge(other)
+  sig { params(rbis: RBI).returns(RBI) }
+  def merge(*rbis)
     v = Rewriters::Merge.new
     v.merge(self)
-    v.merge(other)
+    rbis.each { |rbi| v.merge(rbi) }
     v.rbi
   end
 
