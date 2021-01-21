@@ -25,6 +25,15 @@ class RBI
       end
     end
 
+    desc 'metrics', 'Metrics about RBIs'
+    def metrics(*paths)
+      paths << '.' if paths.empty?
+      files = expand_paths(paths)
+      rbis = parse_files(files)
+      metrics = RBI.metrics(rbis.map(&:last))
+      metrics.pretty_print
+    end
+
     desc 'show', 'Show RBI content'
     # TODO format
     # TODO options

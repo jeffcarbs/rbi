@@ -15,6 +15,7 @@ require 'rbi/ast'
 
 require 'rbi/visitor'
 require 'rbi/index'
+require 'rbi/metrics'
 require 'rbi/printer'
 
 require 'rbi/error'
