@@ -212,12 +212,12 @@ class RBI
     end
   end
 
-  class CBase < Class
+  class CBase < NamedScope
     extend T::Sig
 
     sig { void }
     def initialize
-      super("<cbase>", superclass: nil)
+      super("<cbase>")
     end
 
     sig { returns(String) }

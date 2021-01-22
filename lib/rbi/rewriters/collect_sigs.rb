@@ -37,7 +37,7 @@ class RBI
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
         case node
-        when Module, Class
+        when NamedScope
           @sigs.clear
           visit_all(node.body.dup)
           @sigs.clear
