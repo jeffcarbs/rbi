@@ -59,13 +59,7 @@ class RBI
     sig { params(node: Node).returns(String) }
     def id_for(node)
       case node
-      when NamedScope
-        node.qualified_name
-      when Const
-        node.qualified_name
-      when Def
-        node.qualified_name
-      when Send
+      when NamedScope, Const, Attr, Def, Send
         node.qualified_name
       else
         raise "Can't create id for #{node}"
@@ -89,10 +83,12 @@ class RBI
     sig { override.params(node: T.nilable(Node)).void }
     def visit(node)
       case node
-      when Scope
-        index(node) unless node.is_a?(CBase)
+      when CBase
         visit_all(node.body)
-      when Const, Def, Send
+      when NamedScope
+        index(node)
+        visit_all(node.body)
+      when Const, Def, Attr, Send
         index(node)
       end
     end

@@ -245,56 +245,17 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
-      if body.empty?
-        if v.fold_empty_scopes
-          v.printn("; end")
-        else
-          v.printn
-          v.printl(v.colorize("end", :blue))
-        end
-        return
+      v.visit_all(comments)
+      v.printl("# #{loc}") if loc && v.show_locs
+      case self
+      when Module
+        v.printt("#{v.colorize('module', :blue)} #{v.colorize(name, :cyan)}")
+      when Class
+        v.printt("#{v.colorize('class', :blue)} #{v.colorize(name, :cyan)}")
+        v.print(" < #{v.colorize(T.must(superclass), :cyan)}") if superclass
+      when SClass
+        v.printt("#{v.colorize('class', :blue)} << #{v.colorize('self', :magenta)}")
       end
-      v.printn
-      v.indent
-      v.visit_scope(body)
-      v.dedent
-      v.printl(v.colorize("end", :blue))
-    end
-  end
-
-  class Module
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.visit_all(comments)
-      v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("#{v.colorize('module', :blue)} #{v.colorize(name, :cyan)}")
-      super(v)
-    end
-  end
-
-  class Class
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.visit_all(comments)
-      v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("#{v.colorize('class', :blue)} #{v.colorize(name, :cyan)}")
-      v.print(" < #{v.colorize(T.must(superclass), :cyan)}") if superclass
-      super(v)
-    end
-  end
-
-  class SClass
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.visit_all(comments)
-      v.printl("# #{loc}") if loc && v.show_locs
-      v.printt("#{v.colorize('class', :blue)} << #{v.colorize('self', :magenta)}")
       if body.empty?
         if v.fold_empty_scopes
           v.printn("; end")
@@ -336,30 +297,7 @@ class RBI
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
       v.printt("#{v.colorize('def', :blue)} ")
-      v.print(v.colorize(name.to_s, :light_green))
-      unless params.empty?
-        v.print("(")
-        params.each_with_index do |param, index|
-          v.print(", ") if index > 0
-          v.visit(param)
-        end
-        v.print(")")
-      end
-      v.print("; #{v.colorize('end', :cyan)}")
-      v.print(" # #{loc}") if loc && v.show_locs
-      v.printn
-    end
-  end
-
-  class DefS
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.visit_all(comments)
-      sigs.each { |sig| v.visit(sig) }
-      v.printt("#{v.colorize('def', :blue)} ")
-      v.print("#{v.colorize('self', :magenta)}.")
+      v.print("#{v.colorize('self', :magenta)}.") if self.is_a?(DefS)
       v.print(v.colorize(name.to_s, :light_green))
       unless params.empty?
         v.print("(")
@@ -409,7 +347,17 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
-      v.printt(v.colorize(method.to_s, :yellow))
+      name = case self
+      when AttrReader
+        "attr_reader"
+      when AttrWriter
+        "attr_writer"
+      when AttrAccessor
+        "attr_accessor"
+      else
+        raise
+      end
+      v.printt(v.colorize(name, :yellow))
       unless names.empty?
         v.print(v.paren_attrs ? "(" : " ")
         v.print(names.map { |name| ":#{v.colorize(name.to_s, :light_magenta)}" }.join(", "))

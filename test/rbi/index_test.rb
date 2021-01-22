@@ -38,7 +38,7 @@ class RBI
       assert_equal(["B"], index["::A::B"].map(&:name))
       assert_equal(["B"], index["::B"].map(&:name))
       assert_equal(["foo"], index["::A::B#foo"].map(&:name))
-      assert_equal([["foo"]], index["::A::B.attr_reader(foo)"].map(&:names))
+      assert_equal([[:foo]], index["::A::B.attr_reader(foo)"].map(&:names))
     end
 
     private
