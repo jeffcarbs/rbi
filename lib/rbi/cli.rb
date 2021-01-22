@@ -153,26 +153,30 @@ class RBI
 
     # Misc
 
-    desc 'diff', 'Show diff between two RBIs'
-    # TODO diff
-    def diff(*paths)
-      paths << '.' if paths.empty?
-      files = expand_paths(paths)
-      files.each do |file|
-        content_before = File.read(file)
-        content_after = RBI.from_string(content_before)&.to_rbi(
-          fold_empty_scopes: false,
-          paren_includes: true,
-          paren_mixes: true,
-        )
-        next if content_after&.empty?
-        file1 = "#{file}.f1"
-        file2 = "#{file}.f2"
-        File.write(file1, content_before.gsub(/\n\n/, "\n"))
-        File.write(file2, content_after&.gsub(/\n\n/, "\n"))
-        system("diff -u #{file1} #{file2}")
-        FileUtils.rm(file1)
-        FileUtils.rm(file2)
+    desc 'diff', 'Show diffs between two RBIs'
+    def diff(file1, file2)
+      rbis = parse_files([file1, file2])
+      file1, file2 = rbis.map do |file, rbi|
+        formatted = rbi.collect_sigs.flatten.sort
+        ffile = "#{file}.formatted"
+        File.write(ffile, formatted.to_rbi)
+        ffile
+      end
+      out, _ = Open3.capture2("diff", "-u", file1, file2)
+      FileUtils.rm(file1)
+      FileUtils.rm(file2)
+
+      logger = self.logger
+      out.lines.each do |line|
+        if line.start_with?("+")
+          print(logger.colorize(line, :green))
+        elsif line.start_with?("-")
+          print(logger.colorize(line, :red))
+        elsif line.start_with?("@")
+          print(logger.colorize(line, :yellow))
+        else
+          print(line)
+        end
       end
     end
 

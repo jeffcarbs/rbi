@@ -61,8 +61,7 @@ class RBI
         scope = T.let(@rbi.root, NamedScope)
         names[1...-1]&.each do |parent|
           prev = @index["#{scope.index_id}::#{parent}"].first
-          # TODO error if not prev, don't know how to inflate
-          raise unless prev
+          raise Rewriter::Error.new("Can't inflate unknown scope type #{parent}") unless prev
           inner = T.cast(prev, NamedScope).stub_empty
           inner.name = parent
           scope << inner

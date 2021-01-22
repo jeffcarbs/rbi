@@ -6,6 +6,8 @@ class RBI
     extend T::Helpers
 
     abstract!
+
+    class Error < RBI::Error; end
   end
 
   class NamedScope
