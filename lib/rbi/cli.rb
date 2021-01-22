@@ -120,10 +120,10 @@ class RBI
       rbis = parse_files(files).map(&:last)
 
       validators = []
-      validators << Validator::Duplicates.new(scopes_reopening: !options[:forbid_scopes_reopen])
-      validators << Validator::TSig.new if options[:forbid_tsig]
-      validators << Validator::Doc.new if options[:require_doc]
-      validators << Validator::Sigs.new if options[:require_sig]
+      validators << Validators::Duplicates.new(scopes_reopening: !options[:forbid_scopes_reopen])
+      validators << Validators::TSig.new if options[:forbid_tsig]
+      validators << Validators::Doc.new if options[:require_doc]
+      validators << Validators::Sigs.new if options[:require_sig]
 
       logger = self.logger
       errors = RBI.validate(rbis, validators: validators)

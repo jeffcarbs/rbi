@@ -68,7 +68,7 @@ class RBI
       private
 
       def validate_doc(rbi)
-        validate(rbi, validators: [Validator::Doc.new])
+        validate(rbi, validators: [Validators::Doc.new])
       end
     end
   end

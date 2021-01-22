@@ -47,33 +47,29 @@ class RBI
         case node
         when CBase
           visit_all(node.body)
-        when NamedScope
-          copy = node.dup
-          names = node.qualified_name.split(/::/)
-          scope = T.let(@rbi.root, Scope)
-          names[1...-1]&.each do |parent|
-            prev = @index[node.index_id].first
-            # TODO error if not prev
-            inner = T.cast(prev, Scope).stub_empty
-            inner.name = parent
-            scope << inner
-            scope = inner
-          end
-          copy.name = T.must(names.last)
-          scope << copy
-        when Const
-          # TODO factorize
-          copy = node.dup
-          names = node.qualified_name.split(/::/)
-          scope = T.let(@rbi.root, Scope)
-          names[1...-1]&.each do |parent|
-            inner = Module.new(parent)
-            scope << inner
-            scope = inner
-          end
-          copy.name = T.must(names.last)
-          scope << copy
+        when NamedScope, Const
+          inflate_namespace(node)
         end
+      end
+
+      private
+
+      sig { params(node: T.any(NamedScope, Const)).void }
+      def inflate_namespace(node)
+        copy = node.dup
+        names = node.qualified_name.split(/::/)
+        scope = T.let(@rbi.root, NamedScope)
+        names[1...-1]&.each do |parent|
+          prev = @index["#{scope.index_id}::#{parent}"].first
+          # TODO error if not prev, don't know how to inflate
+          raise unless prev
+          inner = T.cast(prev, NamedScope).stub_empty
+          inner.name = parent
+          scope << inner
+          scope = inner
+        end
+        copy.name = T.must(names.last)
+        scope << copy
       end
     end
   end

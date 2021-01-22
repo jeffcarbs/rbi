@@ -71,7 +71,7 @@ class RBI
       private
 
       def validate_sigs(rbi)
-        validate(rbi, validators: [Validator::Sigs.new])
+        validate(rbi, validators: [Validators::Sigs.new])
       end
     end
   end

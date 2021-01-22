@@ -13,7 +13,8 @@ class RBI
   def self.validate(rbis, validators: default_validators)
     errors = T.let([], T::Array[Validator::Error])
     validators.each do |v|
-      errors.concat(v.validate(rbis))
+      v.validate(rbis)
+      errors.concat(v.errors)
     end
     errors
   end
@@ -21,9 +22,9 @@ class RBI
   sig { returns(T::Array[Validator]) }
   def self.default_validators
     [
-      Validator::Doc.new,
-      Validator::Duplicates.new,
-      Validator::Sigs.new,
+      Validators::Doc.new,
+      Validators::Duplicates.new,
+      Validators::Sigs.new,
     ]
   end
 end

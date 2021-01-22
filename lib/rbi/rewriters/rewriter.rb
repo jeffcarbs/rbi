@@ -8,10 +8,10 @@ class RBI
     abstract!
   end
 
-  class Scope
+  class NamedScope
     extend T::Sig
 
-    sig { returns(Scope) }
+    sig { returns(T.self_type) }
     def dup_empty
       case self
       when CBase
@@ -27,7 +27,7 @@ class RBI
       end
     end
 
-    sig { returns(Scope) }
+    sig { returns(T.self_type) }
     def stub_empty
       case self
       when CBase

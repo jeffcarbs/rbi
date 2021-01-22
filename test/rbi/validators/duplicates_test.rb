@@ -107,7 +107,7 @@ class RBI
       private
 
       def validate_dups(rbi)
-        validate(rbi, validators: [Validator::Duplicates.new])
+        validate(rbi, validators: [Validators::Duplicates.new])
       end
     end
   end
