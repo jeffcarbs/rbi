@@ -10,7 +10,7 @@ class RBI
     class Error < RBI::Error; end
   end
 
-  class NamedScope
+  class Scope
     extend T::Sig
 
     sig { returns(T.self_type) }

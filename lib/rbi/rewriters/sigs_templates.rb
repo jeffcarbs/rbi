@@ -53,10 +53,6 @@ class RBI
               else
                 "T.untyped"
               end
-            when RestParam
-              "T::Array[T.untyped]"
-            when KwRestParam
-              "T::Hash[T.untyped, T.untyped]"
             when BlockParam
               "T.proc.params(*args: T.untyped).returns(T.untyped)"
             else

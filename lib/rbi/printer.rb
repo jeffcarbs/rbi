@@ -258,7 +258,7 @@ class RBI
       end
       if body.empty?
         if v.fold_empty_scopes
-          v.printn("; end")
+          v.printn("; #{v.colorize('end', :blue)}")
         else
           v.printn
           v.printl(v.colorize("end", :blue))
@@ -307,7 +307,7 @@ class RBI
         end
         v.print(")")
       end
-      v.print("; #{v.colorize('end', :cyan)}")
+      v.print("; #{v.colorize('end', :blue)}")
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn
     end
@@ -452,7 +452,7 @@ class RBI
         v.print(" ") if v.fold_sig
         body.each_with_index do |builder, index|
           v.printt unless v.fold_sig
-          v.print(".") if index > 0
+          v.print(v.colorize(".", :light_black)) if index > 0
           v.visit(builder)
           v.printn unless v.fold_sig
           if !v.fold_sig && builder.is_a?(TypeParameters)

@@ -87,8 +87,6 @@ class RBI
         def foo(a = 10, b = nil); end
         def foo(a: 10, b: nil); end
         def foo(&b); end
-        def foo(*a); end
-        def foo(**a); end
       RBI
       assert_tpl_sigs_equal(<<~EXP, rbi)
         sig { params(a: T.untyped, b: T.nilable(T.untyped)).returns(T.untyped) }
@@ -99,12 +97,6 @@ class RBI
 
         sig { params(b: T.proc.params(*args: T.untyped).returns(T.untyped)).returns(T.untyped) }
         def foo(&b); end
-
-        sig { params(a: T::Array[T.untyped]).returns(T.untyped) }
-        def foo(*a); end
-
-        sig { params(a: T::Hash[T.untyped, T.untyped]).returns(T.untyped) }
-        def foo(**a); end
       EXP
     end
 

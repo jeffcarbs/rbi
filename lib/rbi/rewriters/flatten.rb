@@ -40,13 +40,19 @@ class RBI
         case node
         when CBase
           visit_all(node.body)
-        when Module, Class, SClass
+        when Module, Class
           copy = node.dup_empty
           copy.name = node.qualified_name
+          @rbi.root << copy
           @scope_stack << copy
           visit_all(node.body)
           @scope_stack.pop
-          @rbi.root << copy
+        when SClass
+          copy = node.dup_empty
+          scope << copy
+          @scope_stack << copy
+          visit_all(node.body)
+          @scope_stack.pop
         when Const
           copy = node.dup
           copy.name = node.qualified_name

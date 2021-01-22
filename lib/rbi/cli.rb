@@ -43,7 +43,10 @@ class RBI
       logger = self.logger
       rbis.each do |file, rbi|
         puts logger.colorize("\n# #{file}\n", :light_black)
-        puts rbi.to_rbi(color: color?)
+        puts rbi.to_rbi(
+          color: color?,
+          max_len: 100
+        )
       end
     end
 
@@ -54,7 +57,12 @@ class RBI
       rbis = parse_files(files)
       T.unsafe(RBI).collect_sigs(*rbis.map(&:last))
       T.unsafe(RBI).sigs_templates(*rbis.map(&:last))
-      rbis.each { |rbi| puts rbi.last.to_rbi(color: color?) }
+      rbis.each do |rbi|
+        puts rbi.last.to_rbi(
+          color: color?,
+          max_len: 100
+        )
+      end
     end
 
     # RBI edition

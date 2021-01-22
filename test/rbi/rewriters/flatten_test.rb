@@ -35,11 +35,11 @@ class RBI
         end
       RBI
       assert_flatten_equal(<<~EXP, rbi)
-        class ::Foo::Bar::Baz; end
-        module ::Foo::Bar; end
         class ::Foo; end
-        class ::Bar::Baz; end
+        module ::Foo::Bar; end
+        class ::Foo::Bar::Baz; end
         module ::Bar; end
+        class ::Bar::Baz; end
       EXP
     end
 
@@ -60,12 +60,12 @@ class RBI
         def foo; end
       RBI
       assert_flatten_equal(<<~EXP, rbi)
-        module ::Foo::Bar
-          def foo; end
-        end
-
         class ::Foo
           attr_reader :bar
+        end
+
+        module ::Foo::Bar
+          def foo; end
         end
 
         module ::Bar
@@ -89,11 +89,11 @@ class RBI
         end
       RBI
       assert_flatten_equal(<<~EXP, rbi)
-        class ::Baz; end
-        module ::Foo::Bar; end
         class ::Foo; end
+        module ::Foo::Bar; end
         class ::Baz; end
         module ::Bar; end
+        class ::Baz; end
       EXP
     end
 
@@ -112,12 +112,41 @@ class RBI
         end
       RBI
       assert_flatten_equal(<<~EXP, rbi)
-        ::Foo::Bar::BAR = 10
-        module ::Foo::Bar; end
-        ::Foo::FOO = Foo::Bar
         class ::Foo; end
-        ::Bar::BAR = \"Bar\"
+        module ::Foo::Bar; end
+        ::Foo::Bar::BAR = 10
+        ::Foo::FOO = Foo::Bar
         module ::Bar; end
+        ::Bar::BAR = \"Bar\"
+      EXP
+    end
+
+    def test_flatten_scopes_dont_move_singletons
+      rbi = <<~RBI
+        class Foo
+          class << self
+            def foo; end
+          end
+
+          module Bar
+            class << self
+              BAR = 10
+            end
+          end
+        end
+      RBI
+      assert_flatten_equal(<<~EXP, rbi)
+        class ::Foo
+          class << self
+            def foo; end
+          end
+        end
+
+        module ::Foo::Bar
+          class << self; end
+        end
+
+        ::Foo::Bar::BAR = 10
       EXP
     end
 
