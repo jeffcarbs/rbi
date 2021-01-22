@@ -16,7 +16,7 @@ class RBI
   end
 
   module Rewriters
-    class SigTemplates < Base
+    class SigTemplates < Rewriter
       extend T::Sig
 
       sig { void }

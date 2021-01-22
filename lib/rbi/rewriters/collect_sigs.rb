@@ -16,7 +16,7 @@ class RBI
   end
 
   module Rewriters
-    class CollectSigs < Base
+    class CollectSigs < Rewriter
       extend T::Sig
 
       sig { void }

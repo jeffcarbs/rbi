@@ -19,7 +19,7 @@ class RBI
   end
 
   module Rewriters
-    class Flatten < Base
+    class Flatten < Rewriter
       extend T::Sig
 
       sig { returns(RBI) }

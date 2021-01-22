@@ -27,7 +27,7 @@ require 'rbi/parser/whitequark'
 require 'rbi/parser/sorbet'
 require 'rbi/parser'
 
-require 'rbi/rewriters/base'
+require 'rbi/rewriters/rewriter'
 require 'rbi/rewriters/collect_sigs'
 require 'rbi/rewriters/flatten'
 require 'rbi/rewriters/inflate'

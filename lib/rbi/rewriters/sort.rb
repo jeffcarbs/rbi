@@ -16,7 +16,7 @@ class RBI
   end
 
   module Rewriters
-    class Sort < Base
+    class Sort < Rewriter
       extend T::Sig
 
       sig { void }

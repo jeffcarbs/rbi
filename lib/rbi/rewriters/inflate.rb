@@ -20,7 +20,7 @@ class RBI
   end
 
   module Rewriters
-    class Inflate < Base
+    class Inflate < Rewriter
       extend T::Sig
 
       sig { returns(RBI) }

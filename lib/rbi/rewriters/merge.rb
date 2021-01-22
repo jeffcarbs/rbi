@@ -20,7 +20,7 @@ class RBI
   end
 
   module Rewriters
-    class Merge < Base
+    class Merge < Rewriter
       extend T::Sig
 
       sig { returns(RBI) }
