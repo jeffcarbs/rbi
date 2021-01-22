@@ -325,8 +325,6 @@ class RBI
     end
   end
 
-  # TODO remove? rename as param?
-
   class RestParam < Param; end
 
   class KwParam < Param; end

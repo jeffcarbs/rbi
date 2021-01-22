@@ -313,6 +313,24 @@ class RBI
     end
   end
 
+  class Attr
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.visit_all(comments)
+      sigs.each { |sig| v.visit(sig) }
+      v.printt(v.colorize(kind, :yellow))
+      unless names.empty?
+        v.print(v.paren_attrs ? "(" : " ")
+        v.print(names.map { |name| ":#{v.colorize(name.to_s, :light_magenta)}" }.join(", "))
+        v.print(v.paren_attrs ? ")" : "")
+      end
+      v.print(" # #{loc}") if loc && v.show_locs
+      v.printn
+    end
+  end
+
   class Send
     extend T::Sig
 
@@ -334,24 +352,6 @@ class RBI
         v.print(parens ? "(" : " ")
         v.print(args.map { |arg| v.colorize(arg, :cyan) }.join(", "))
         v.print(parens ? ")" : "")
-      end
-      v.print(" # #{loc}") if loc && v.show_locs
-      v.printn
-    end
-  end
-
-  class Attr
-    extend T::Sig
-
-    sig { override.params(v: Printer).void }
-    def accept_printer(v)
-      v.visit_all(comments)
-      sigs.each { |sig| v.visit(sig) }
-      v.printt(v.colorize(kind, :yellow))
-      unless names.empty?
-        v.print(v.paren_attrs ? "(" : " ")
-        v.print(names.map { |name| ":#{v.colorize(name.to_s, :light_magenta)}" }.join(", "))
-        v.print(v.paren_attrs ? ")" : "")
       end
       v.print(" # #{loc}") if loc && v.show_locs
       v.printn

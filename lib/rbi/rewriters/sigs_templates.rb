@@ -45,7 +45,25 @@ class RBI
       sig = Sig.new
       unless params.empty?
         sig << Sig::Params.new(
-          params.map { |param| Sig::Param.new(param.name, type: "T.untyped") }
+          params.map do |param|
+            type = case param
+            when OptParam, KwOptParam
+              if param.value =~ /\bnil\b/
+                "T.nilable(T.untyped)"
+              else
+                "T.untyped"
+              end
+            when RestParam
+              "T::Array[T.untyped]"
+            when KwRestParam
+              "T::Hash[T.untyped, T.untyped]"
+            when BlockParam
+              "T.proc.params(*args: T.untyped).returns(T.untyped)"
+            else
+              "T.untyped"
+            end
+            Sig::Param.new(param.name, type: type)
+          end
         )
       end
       sig << Sig::Returns.new("T.untyped")

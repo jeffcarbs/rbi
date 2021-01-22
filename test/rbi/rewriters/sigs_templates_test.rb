@@ -11,8 +11,7 @@ class RBI
       rbi = <<~RBI
         def foo; end
         def foo(a, b, c); end
-        def foo(a, b:, c: "test"); end
-        def foo(a = nil, b: nil, &c); end
+        def foo(a, b:, c:); end
       RBI
       assert_tpl_sigs_equal(<<~EXP, rbi)
         sig { returns(T.untyped) }
@@ -22,10 +21,7 @@ class RBI
         def foo(a, b, c); end
 
         sig { params(a: T.untyped, b: T.untyped, c: T.untyped).returns(T.untyped) }
-        def foo(a, b:, c: \"test\"); end
-
-        sig { params(a: T.untyped, b: T.untyped, c: T.untyped).returns(T.untyped) }
-        def foo(a = nil, b: nil, &c); end
+        def foo(a, b:, c:); end
       EXP
     end
 
@@ -83,6 +79,32 @@ class RBI
 
         sig { returns(Integer) }
         def foo; end
+      EXP
+    end
+
+    def test_create_template_sigs_using_methods_params_default_values
+      rbi = <<~RBI
+        def foo(a = 10, b = nil); end
+        def foo(a: 10, b: nil); end
+        def foo(&b); end
+        def foo(*a); end
+        def foo(**a); end
+      RBI
+      assert_tpl_sigs_equal(<<~EXP, rbi)
+        sig { params(a: T.untyped, b: T.nilable(T.untyped)).returns(T.untyped) }
+        def foo(a = 10, b = nil); end
+
+        sig { params(a: T.untyped, b: T.nilable(T.untyped)).returns(T.untyped) }
+        def foo(a: 10, b: nil); end
+
+        sig { params(b: T.proc.params(*args: T.untyped).returns(T.untyped)).returns(T.untyped) }
+        def foo(&b); end
+
+        sig { params(a: T::Array[T.untyped]).returns(T.untyped) }
+        def foo(*a); end
+
+        sig { params(a: T::Hash[T.untyped, T.untyped]).returns(T.untyped) }
+        def foo(**a); end
       EXP
     end
 
