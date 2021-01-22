@@ -272,18 +272,6 @@ class RBI
       @sigs = T.let([], T::Array[Sig])
     end
 
-    sig { returns(Sig) }
-    def template_sig
-      sig = Sig.new
-      unless params.empty?
-        sig << Sig::Params.new(
-          params.map { |param| Param.new(param.name, type: "T.untyped") }
-        )
-      end
-      sig << Sig::Returns.new("T.untyped")
-      sig
-    end
-
     sig { returns(String) }
     def qualified_name
       "#{named_parent_scope&.qualified_name}##{name}"
@@ -376,34 +364,6 @@ class RBI
 
   class BlockArg < Param; end
 
-  # Sends
-
-  # TODO Take arg or pairs
-  class Send < Stmt
-    extend T::Sig
-    extend T::Helpers
-
-    abstract!
-
-    sig { returns(::Symbol) }
-    attr_reader :method
-
-    sig { returns(T::Array[String]) }
-    attr_reader :args
-
-    sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
-    def initialize(method, args: [], loc: nil)
-      super(loc: loc)
-      @method = method
-      @args = args
-    end
-
-    sig { returns(String) }
-    def to_s
-      method.to_s
-    end
-  end
-
   # Attributes
 
   class Attr < Stmt
@@ -443,9 +403,6 @@ class RBI
     def qualified_name
       "#{named_parent_scope&.qualified_name}.#{kind}(#{names.join(',')})"
     end
-
-    sig { abstract.returns(Sig) }
-    def template_sig; end
   end
 
   class AttrReader < Attr
@@ -454,13 +411,6 @@ class RBI
     sig { params(name: ::Symbol, names: ::Symbol, loc: T.nilable(Loc)).void }
     def initialize(name, *names, loc: nil)
       super([name, *names], loc: loc)
-    end
-
-    sig { override.returns(Sig) }
-    def template_sig
-      sig = Sig.new
-      sig << Sig::Returns.new("T.untyped")
-      sig
     end
   end
 
@@ -471,14 +421,6 @@ class RBI
     def initialize(name, *names, loc: nil)
       super([name, *names], loc: loc)
     end
-
-    sig { override.returns(Sig) }
-    def template_sig
-      sig = Sig.new
-      sig << Sig::Params.new(names.map { |name| Param.new(name.to_s, type: "T.untyped") })
-      sig << Sig::Void.new
-      sig
-    end
   end
 
   class AttrAccessor < Attr
@@ -488,13 +430,33 @@ class RBI
     def initialize(name, *names, loc: nil)
       super([name, *names], loc: loc)
     end
+  end
 
-    sig { override.returns(Sig) }
-    def template_sig
-      sig = Sig.new
-      sig << Sig::Params.new(names.map { |name| Param.new(name.to_s, type: "T.untyped") })
-      sig << Sig::Returns.new("T.untyped")
-      sig
+  # Sends
+
+  # TODO Take arg or pairs
+  class Send < Stmt
+    extend T::Sig
+    extend T::Helpers
+
+    abstract!
+
+    sig { returns(::Symbol) }
+    attr_reader :method
+
+    sig { returns(T::Array[String]) }
+    attr_reader :args
+
+    sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
+    def initialize(method, args: [], loc: nil)
+      super(loc: loc)
+      @method = method
+      @args = args
+    end
+
+    sig { returns(String) }
+    def to_s
+      method.to_s
     end
   end
 
