@@ -27,10 +27,7 @@ class RBI
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
         case node
-        when Def
-          return unless node.sigs.empty?
-          node.sigs << node.template_sig
-        when Attr
+        when Def, Attr
           return unless node.sigs.empty?
           node.sigs << node.template_sig
         when Scope

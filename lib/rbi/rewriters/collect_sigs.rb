@@ -32,10 +32,7 @@ class RBI
           @sigs.clear
           visit_all(node.body.dup)
           @sigs.clear
-        when Def
-          node.sigs.concat(@sigs)
-          @sigs.clear
-        when Attr
+        when Def, Attr
           node.sigs.concat(@sigs)
           @sigs.clear
         when Sig
