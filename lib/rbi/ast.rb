@@ -198,7 +198,7 @@ class RBI
     end
   end
 
-  class SClass < Class
+  class SClass < NamedScope
     extend T::Sig
 
     sig { params(loc: T.nilable(Loc)).void }

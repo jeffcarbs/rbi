@@ -58,7 +58,7 @@ class RBI
       sig { params(node: Node).returns(T.nilable(String)) }
       def node_name(node)
         case node
-        when Module, Class, Const, Def
+        when NamedScope, Const, Def
           node.name
         when Send
           "#{node.method}(#{node.args.join(',')})"

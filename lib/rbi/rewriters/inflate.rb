@@ -46,7 +46,7 @@ class RBI
         case node
         when CBase
           visit_all(node.body)
-        when Module, Class
+        when NamedScope
           copy = node.dup
           names = node.qualified_name.split(/::/)
           scope = T.let(@rbi.root, Scope)
