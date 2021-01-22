@@ -32,7 +32,7 @@ class RBI
           visit_all(node.body)
         when Attr
           return unless node.sigs.empty?
-          @errors << Error.new("Accessor `#{node.parent_scope&.name}##{node.names.join(', ')}` defined without a sig",
+          @errors << Error.new("Accessor `#{node.named_parent_scope&.name}##{node.names.join(', ')}` defined without a sig",
                                loc: node.loc)
         when Scope
           visit_all(node.body)

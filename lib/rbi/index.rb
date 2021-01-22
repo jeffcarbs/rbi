@@ -59,7 +59,7 @@ class RBI
     sig { params(node: Node).returns(String) }
     def id_for(node)
       case node
-      when Scope
+      when Module, Class
         node.qualified_name
       when Const
         node.qualified_name

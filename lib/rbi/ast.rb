@@ -62,6 +62,15 @@ class RBI
       @parent_scope = T.let(nil, T.nilable(Scope))
       @comments = T.let([], T::Array[Comment])
     end
+
+    sig { returns(T.nilable(NamedScope)) }
+    def named_parent_scope
+      parent = T.let(parent_scope, T.nilable(Scope))
+      while parent && !parent.is_a?(NamedScope)
+        parent = parent.parent_scope
+      end
+      parent
+    end
   end
 
   # Scopes
@@ -72,16 +81,12 @@ class RBI
 
     abstract!
 
-    sig { returns(String) }
-    attr_accessor :name
-
     sig { returns(T::Array[Stmt]) }
     attr_reader :body
 
-    sig { params(name: String, loc: T.nilable(Loc)).void }
-    def initialize(name, loc: nil)
+    sig { params(loc: T.nilable(Loc)).void }
+    def initialize(loc: nil)
       super(loc: loc)
-      @name = name
       @body = T.let([], T::Array[Stmt])
     end
 
@@ -91,14 +96,30 @@ class RBI
       @body << node
     end
 
+    sig { abstract.returns(Scope) }
+    def dup_empty; end
+  end
+
+  class NamedScope < Scope
+    extend T::Helpers
+    extend T::Sig
+
+    abstract!
+
+    sig { returns(String) }
+    attr_accessor :name
+
+    sig { params(name: String, loc: T.nilable(Loc)).void }
+    def initialize(name, loc: nil)
+      super(loc: loc)
+      @name = name
+    end
+
     sig { returns(String) }
     def qualified_name
       return name if name.start_with?("::")
-      "#{parent_scope&.qualified_name}::#{name}"
+      "#{named_parent_scope&.qualified_name}::#{name}"
     end
-
-    sig { abstract.returns(Scope) }
-    def dup_empty; end
 
     sig { returns(String) }
     def to_s
@@ -106,7 +127,7 @@ class RBI
     end
   end
 
-  class Module < Scope
+  class Module < NamedScope
     extend T::Sig
 
     sig { params(name: String, loc: T.nilable(Loc)).void }
@@ -131,7 +152,7 @@ class RBI
     end
   end
 
-  class Class < Scope
+  class Class < NamedScope
     extend T::Sig
 
     sig { returns(T.nilable(String)) }
@@ -236,7 +257,7 @@ class RBI
     sig { returns(String) }
     def qualified_name
       return name if name.start_with?("::")
-      "#{parent_scope&.qualified_name}::#{name}"
+      "#{named_parent_scope&.qualified_name}::#{name}"
     end
 
     sig { returns(String) }
@@ -249,6 +270,9 @@ class RBI
 
   class Def < Scope
     extend T::Sig
+
+    sig { returns(String) }
+    attr_accessor :name
 
     sig { returns(T::Boolean) }
     attr_reader :is_singleton
@@ -268,7 +292,8 @@ class RBI
       ).void
     end
     def initialize(name, is_singleton: false, params: [], loc: nil)
-      super(name, loc: loc)
+      super(loc: loc)
+      @name = name
       @is_singleton = is_singleton
       @params = params
       @sigs = T.let([], T::Array[Sig])
@@ -288,7 +313,7 @@ class RBI
 
     sig { returns(String) }
     def qualified_name
-      "#{parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
+      "#{named_parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
     end
 
     sig { override.returns(Def) }
@@ -399,7 +424,7 @@ class RBI
 
     sig { returns(String) }
     def qualified_name
-      "#{parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
+      "#{named_parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
     end
 
     sig { returns(String) }
@@ -417,7 +442,7 @@ class RBI
 
     sig { override.returns(Block) }
     def dup_empty
-      Block.new(name)
+      Block.new(loc: loc)
     end
   end
 
