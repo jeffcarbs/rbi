@@ -29,7 +29,6 @@ class RBI
         when Def
           return unless node.sigs.empty?
           @errors << Error.new("Method `#{node.name}` defined without a sig", loc: node.loc)
-          visit_all(node.body)
         when Attr
           return unless node.sigs.empty?
           @errors << Error.new("Accessor `#{node.named_parent_scope&.name}##{node.names.join(', ')}` defined without a sig",

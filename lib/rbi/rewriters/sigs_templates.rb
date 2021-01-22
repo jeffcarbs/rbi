@@ -36,7 +36,6 @@ class RBI
       def visit(node)
         case node
         when Def
-          visit_all(node.body)
           return unless node.sigs.empty?
           node.sigs << node.template_sig
         when Attr

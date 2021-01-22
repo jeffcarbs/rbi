@@ -29,7 +29,6 @@ class RBI
         when Def
           return unless node.comments.empty?
           @errors << Error.new("Method `#{node.name}` declared without documentation", loc: node.loc)
-          visit_all(node.body)
         when Scope
           visit_all(node.body)
         end

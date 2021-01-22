@@ -268,7 +268,7 @@ class RBI
 
   # Defs
 
-  class Def < Scope
+  class Def < Stmt
     extend T::Sig
 
     sig { returns(String) }
@@ -314,11 +314,6 @@ class RBI
     sig { returns(String) }
     def qualified_name
       "#{named_parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
-    end
-
-    sig { override.returns(Def) }
-    def dup_empty
-      Def.new(name, is_singleton: is_singleton, params: params, loc: loc)
     end
 
     sig { returns(String) }

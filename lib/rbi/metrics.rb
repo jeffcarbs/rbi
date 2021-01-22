@@ -67,7 +67,6 @@ class RBI
         visit_all(node.body)
       when Def
         metrics.defs += 1
-        visit_all(node.body)
       when Attr
         metrics.attrs += 1
       when Const
