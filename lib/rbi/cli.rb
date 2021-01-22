@@ -134,7 +134,7 @@ class RBI
       end
 
       if options[:files]
-        puts errors.map{ |error| error.loc.file }.sort.uniq
+        puts errors.map{ |error| error.loc&.file }.sort.uniq
       else
         errors.each do |error|
           logger.show_error(error, compact: options[:short])
@@ -209,7 +209,7 @@ class RBI
       end
 
       def run_sorbet(paths)
-        Open3.capture2("bundle", "exec", "srb", "tc", "--no-config", *paths)
+        T.unsafe(Open3).capture2("bundle", "exec", "srb", "tc", "--no-config", *paths)
       end
 
       # Options
