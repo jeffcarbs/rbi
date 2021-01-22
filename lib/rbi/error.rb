@@ -48,6 +48,11 @@ class RBI
   class Logger
     extend T::Sig
 
+    sig { params(errors: T::Array[Error], compact: T::Boolean).void }
+    def show_errors(errors, compact: false)
+      errors.each { |error| show_error(error) }
+    end
+
     sig { params(error: Error, compact: T::Boolean).void }
     def show_error(error, compact: false)
       loc = error.loc

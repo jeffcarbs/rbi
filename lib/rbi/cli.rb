@@ -85,10 +85,19 @@ class RBI
 
     desc 'inflate', 'Inflate RBIs'
     def inflate(path, *paths)
+      logger = self.logger
       paths = [path, *paths]
       files = expand_paths(paths)
       rbis = parse_files(files)
-      puts T.unsafe(RBI).inflate(*rbis.map(&:last)).to_rbi(color: color?)
+      inflated, errors = T.unsafe(RBI).inflate(*rbis.map(&:last))
+      puts inflated.to_rbi(color: color?)
+      logger.show_errors(errors)
+      if errors.empty?
+        logger.say("No errors. Good job!")
+      else
+        logger.say("#{errors.size} error#{errors.size > 1 ? 's' : ''}.")
+      end
+      exit(errors.empty?)
     end
 
     # RBI validation
