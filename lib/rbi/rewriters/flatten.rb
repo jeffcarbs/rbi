@@ -4,15 +4,17 @@
 class RBI
   extend T::Sig
 
-  sig { params(rbis: RBI).returns(RBI) }
-  def flatten(*rbis)
-    T.unsafe(RBI).flatten(self, *rbis)
+  sig { returns(RBI) }
+  def flatten
+    v = Rewriters::Flatten.new
+    v.visit_rbi(self)
+    v.rbi
   end
 
   sig { params(rbis: RBI).returns(RBI) }
   def self.flatten(*rbis)
     v = Rewriters::Flatten.new
-    v.visit_all(rbis.map(&:root))
+    v.visit_rbis(rbis)
     v.rbi
   end
 
@@ -29,13 +31,6 @@ class RBI
         @rbi = T.let(RBI.new, RBI)
         @scope_stack = T.let([@rbi.root], T::Array[Scope])
       end
-
-      sig { params(rbi: RBI).void }
-      def flatten(rbi)
-        visit(rbi.root)
-      end
-
-      private
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)

@@ -6,15 +6,13 @@ class RBI
 
   sig { returns(RBI) }
   def collect_sigs
-    v = Rewriters::CollectSigs.new
-    v.collect(self)
+    Rewriters::CollectSigs.new.visit_rbi(self)
     self
   end
 
   sig { params(rbis: RBI).void }
   def self.collect_sigs(*rbis)
-    v = Rewriters::CollectSigs.new
-    v.visit_all(rbis.map(&:root))
+    Rewriters::CollectSigs.new.visit_rbis(rbis)
   end
 
   module Rewriters
@@ -26,13 +24,6 @@ class RBI
         super
         @sigs = T.let([], T::Array[Sig])
       end
-
-      sig { params(rbi: RBI).void }
-      def collect(rbi)
-        visit(rbi.root)
-      end
-
-      private
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)

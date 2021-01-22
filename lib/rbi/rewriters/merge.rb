@@ -6,13 +6,16 @@ class RBI
 
   sig { params(rbis: RBI).returns(RBI) }
   def merge(*rbis)
-    T.unsafe(RBI).merge(self, *rbis)
+    v = Rewriters::Merge.new
+    v.visit_rbi(self)
+    v.visit_rbis(rbis)
+    v.rbi
   end
 
   sig { params(rbis: RBI).returns(RBI) }
   def self.merge(*rbis)
     v = Rewriters::Merge.new
-    v.visit_all(rbis.map(&:root))
+    v.visit_rbis(rbis)
     v.rbi
   end
 
@@ -30,13 +33,6 @@ class RBI
         @index = T.let(Index.new, Index)
         @scope_stack = T.let([@rbi.root], T::Array[Scope])
       end
-
-      sig { params(rbi: RBI).void }
-      def merge(rbi)
-        visit(rbi.root)
-      end
-
-      private
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)

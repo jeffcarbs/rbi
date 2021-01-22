@@ -6,10 +6,13 @@ class RBI
 
   sig { returns(RBI) }
   def sort
-    rbi = dup
-    v = Rewriters::Sort.new
-    v.sort(rbi)
-    rbi
+    Rewriters::Sort.new.visit_rbi(self)
+    self
+  end
+
+  sig { params(rbis: RBI).void }
+  def self.sort(*rbis)
+    Rewriters::Sort.new.visit_rbis(rbis)
   end
 
   module Rewriters
@@ -21,13 +24,6 @@ class RBI
         super
       end
 
-      sig { params(rbi: RBI).void }
-      def sort(rbi)
-        visit(rbi.root)
-      end
-
-      private
-
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
         return unless node.is_a?(Scope)
@@ -38,6 +34,8 @@ class RBI
           res || 0
         end
       end
+
+      private
 
       sig { params(node: Node).returns(Integer) }
       def kind_rank(node)

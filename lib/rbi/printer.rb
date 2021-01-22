@@ -49,7 +49,7 @@ class RBI
       paren_mixes: paren_mixes,
       paren_tprops: paren_tprops,
     )
-    p.visit_body(root.body)
+    p.visit_scope(root.body)
     out.string
   end
 
@@ -180,7 +180,7 @@ class RBI
     end
 
     sig { params(nodes: T::Array[Node]).void }
-    def visit_body(nodes)
+    def visit_scope(nodes)
       previous = T::Array[Node].new
       nodes.each_with_index do |node, _index|
         printn if blank_before?(node, previous)
@@ -254,7 +254,7 @@ class RBI
       end
       v.printn
       v.indent
-      v.visit_body(body)
+      v.visit_scope(body)
       v.dedent
       v.printl(v.colorize("end", :blue))
     end
@@ -304,7 +304,7 @@ class RBI
       end
       v.printn
       v.indent
-      v.visit_body(body)
+      v.visit_scope(body)
       v.dedent
       v.printl(v.colorize("end", :blue))
     end

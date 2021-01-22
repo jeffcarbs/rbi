@@ -6,7 +6,10 @@ class RBI
 
   sig { params(rbis: RBI).returns(RBI) }
   def inflate(*rbis)
-    T.unsafe(RBI).inflate(self, *rbis)
+    rbis.prepend(self)
+    v = Rewriters::Inflate.new
+    v.inflate(rbis)
+    v.rbi.merge
   end
 
   sig { params(rbis: RBI).returns(RBI) }
@@ -36,8 +39,6 @@ class RBI
         @index.visit_all(roots)
         visit_all(roots)
       end
-
-      private
 
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
