@@ -59,12 +59,12 @@ class RBI
           def foo; end
         RBI
         assert_equal([
-          "Accessor `<cbase>#a, b` defined without a sig",
-          "Accessor `A#foo` defined without a sig",
-          "Method `foo` defined without a sig",
-          "Accessor `B::C#bar` defined without a sig",
-          "Method `bar` defined without a sig",
-          "Method `foo` defined without a sig",
+          "Accessor `#a,b` defined without a sig",
+          "Accessor `::A#foo` defined without a sig",
+          "Method `::A#foo` defined without a sig",
+          "Accessor `::A::B::C#bar` defined without a sig",
+          "Method `::A::B::C::bar` defined without a sig",
+          "Method `#foo` defined without a sig",
         ], errors.map(&:message))
       end
 

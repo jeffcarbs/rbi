@@ -18,9 +18,22 @@ class RBI
       sig { override.params(node: T.nilable(Node)).void }
       def visit(node)
         case node
+        when Module
+          if node.comments.empty?
+            @errors << Validator::Error.new("Module `#{node.name}` declared without documentation", loc: node.loc)
+          end
+          visit_all(node.body)
+        when Class
+          if node.comments.empty?
+            @errors << Validator::Error.new("Class `#{node.name}` declared without documentation", loc: node.loc)
+          end
+          visit_all(node.body)
         when Def
           return unless node.comments.empty?
           @errors << Validator::Error.new("Method `#{node.name}` declared without documentation", loc: node.loc)
+        when Attr
+          return unless node.comments.empty?
+          @errors << Validator::Error.new("Attribute `#{node.names.join(', ')}` declared without documentation", loc: node.loc)
         when Scope
           visit_all(node.body)
         end

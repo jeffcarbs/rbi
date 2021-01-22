@@ -399,11 +399,6 @@ class RBI
     end
 
     sig { returns(String) }
-    def qualified_name
-      "#{named_parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
-    end
-
-    sig { returns(String) }
     def to_s
       method.to_s
     end

@@ -18,6 +18,7 @@ class RBI
           # Comment
           attr_reader :a, :b
 
+          # Comment
           class A
             # Comment
             attr_writer :foo
@@ -25,6 +26,7 @@ class RBI
             # Comment
             def foo; end
 
+            # Comment
             module B::C
               # Comment
               attr_accessor :bar
@@ -59,7 +61,12 @@ class RBI
           def foo; end
         RBI
         assert_equal([
+          "Attribute `a, b` declared without documentation",
+          "Class `A` declared without documentation",
+          "Attribute `foo` declared without documentation",
           "Method `foo` declared without documentation",
+          "Module `B::C` declared without documentation",
+          "Attribute `bar` declared without documentation",
           "Method `bar` declared without documentation",
           "Method `foo` declared without documentation",
         ], errors.map(&:message))

@@ -130,7 +130,7 @@ class RBI
 
     sig { override.returns(String) }
     def index_id
-      qualified_name
+      "#{named_parent_scope&.qualified_name}.#{method}(#{args.join(',')})"
     end
   end
 end

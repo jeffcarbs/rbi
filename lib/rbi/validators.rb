@@ -25,6 +25,7 @@ class RBI
       Validators::Doc.new,
       Validators::Duplicates.new,
       Validators::Sigs.new,
+      Validators::TSig.new,
     ]
   end
 end

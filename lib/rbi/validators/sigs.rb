@@ -20,11 +20,13 @@ class RBI
         case node
         when Def
           return unless node.sigs.empty?
-          @errors << Validator::Error.new("Method `#{node.name}` defined without a sig", loc: node.loc)
+          message = "Method `#{node.qualified_name}` defined without a sig"
+          @errors << Validator::Error.new(message, loc: node.loc)
         when Attr
           return unless node.sigs.empty?
-          @errors << Validator::Error.new("Accessor `#{node.named_parent_scope&.name}##{node.names.join(', ')}` defined without a sig",
-                               loc: node.loc)
+          name = "#{node.named_parent_scope&.qualified_name}##{node.names.join(',')}"
+          message = "Accessor `#{name}` defined without a sig"
+          @errors << Validator::Error.new(message, loc: node.loc)
         when Scope
           visit_all(node.body)
         end
