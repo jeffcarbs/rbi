@@ -22,7 +22,7 @@ class RBI
           next unless nodes.size > 1
           first = T.must(nodes.first)
 
-          not_scopes = nodes.select { |node| !node.is_a?(Scope) || node.is_a?(Def) }
+          not_scopes = nodes.select { |node| !node.is_a?(Scope) || node.is_a?(Def) || node.is_a?(Def) }
           unless not_scopes.empty?
             error = Error.new("Duplicated definitions for `#{id}`. Defined here:", loc: first.loc)
             nodes.each do |node|

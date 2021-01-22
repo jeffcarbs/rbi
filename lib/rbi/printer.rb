@@ -227,6 +227,8 @@ class RBI
 
     sig { abstract.params(v: Printer).void }
     def accept_printer(v); end
+
+    # TODO to rbi
   end
 
   class Comment
@@ -334,7 +336,30 @@ class RBI
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
       v.printt("#{v.colorize('def', :blue)} ")
-      v.print("#{v.colorize('self', :magenta)}.") if is_singleton
+      v.print(v.colorize(name.to_s, :light_green))
+      unless params.empty?
+        v.print("(")
+        params.each_with_index do |param, index|
+          v.print(", ") if index > 0
+          v.visit(param)
+        end
+        v.print(")")
+      end
+      v.print("; #{v.colorize('end', :cyan)}")
+      v.print(" # #{loc}") if loc && v.show_locs
+      v.printn
+    end
+  end
+
+  class DefS
+    extend T::Sig
+
+    sig { override.params(v: Printer).void }
+    def accept_printer(v)
+      v.visit_all(comments)
+      sigs.each { |sig| v.visit(sig) }
+      v.printt("#{v.colorize('def', :blue)} ")
+      v.print("#{v.colorize('self', :magenta)}.")
       v.print(v.colorize(name.to_s, :light_green))
       unless params.empty?
         v.print("(")

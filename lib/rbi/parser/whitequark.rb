@@ -283,8 +283,10 @@ class RBI
           case node.type
           when :module, :class, :sclass
             visit_scope(node)
-          when :def, :defs
+          when :def
             visit_def(node)
+          when :defs
+            visit_sdef(node)
           when :casgn
             visit_const_assign(node)
           when :send
@@ -342,12 +344,18 @@ class RBI
 
         sig { params(node: AST::Node).void }
         def visit_def(node)
-          is_singleton = node.type == :defs
-          params = node.children[is_singleton ? 2 : 1].children.map { |child| visit_param(child) }
-          meth = Def.new(
-            node.children[is_singleton ? 1 : 0].to_s,
-            is_singleton: is_singleton,
-            params: params,
+          meth = Def.new(node.children[0].to_s,
+            params: node.children[1].children.map { |child| visit_param(child) },
+          )
+          meth.loc = node_loc(node)
+          meth.comments = node_comments(node)
+          @current_scope << meth
+        end
+
+        sig { params(node: AST::Node).void }
+        def visit_sdef(node)
+          meth = DefS.new(node.children[1].to_s,
+            params: node.children[2].children.map { |child| visit_param(child) },
           )
           meth.loc = node_loc(node)
           meth.comments = node_comments(node)

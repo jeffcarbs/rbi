@@ -274,9 +274,6 @@ class RBI
     sig { returns(String) }
     attr_accessor :name
 
-    sig { returns(T::Boolean) }
-    attr_reader :is_singleton
-
     sig { returns(T::Array[Param]) }
     attr_reader :params
 
@@ -286,15 +283,13 @@ class RBI
     sig do
       params(
         name: String,
-        is_singleton: T::Boolean,
         params: T::Array[Param],
         loc: T.nilable(Loc),
       ).void
     end
-    def initialize(name, is_singleton: false, params: [], loc: nil)
+    def initialize(name, params: [], loc: nil)
       super(loc: loc)
       @name = name
-      @is_singleton = is_singleton
       @params = params
       @sigs = T.let([], T::Array[Sig])
     end
@@ -313,12 +308,21 @@ class RBI
 
     sig { returns(String) }
     def qualified_name
-      "#{named_parent_scope&.qualified_name}#{is_singleton ? '::' : '#'}#{name}"
+      "#{named_parent_scope&.qualified_name}##{name}"
     end
 
     sig { returns(String) }
     def to_s
       name
+    end
+  end
+
+  class DefS < Def
+    extend T::Sig
+
+    sig { returns(String) }
+    def qualified_name
+      "#{named_parent_scope&.qualified_name}::#{name}"
     end
   end
 
@@ -378,6 +382,8 @@ class RBI
     end
   end
 
+  # TODO remove? rename as param?
+
   class Arg < Param; end
 
   class OptArg < ParamWithValue; end
@@ -394,6 +400,7 @@ class RBI
 
   # Sends
 
+  # TODO Take arg or pairs
   class Send < Stmt
     extend T::Sig
     extend T::Helpers
@@ -443,6 +450,7 @@ class RBI
 
   # Attributes
 
+  # TODO not a send?
   class Attr < Send
     extend T::Sig
     extend T::Helpers
@@ -585,6 +593,7 @@ class RBI
 
   # Sorbet
 
+  # TODO move away
   class Abstract < Send
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
@@ -648,6 +657,7 @@ class RBI
 
   # Sigs
 
+  # TODO should be a send w/ a block
   class Sig < Stmt
     extend T::Sig
 

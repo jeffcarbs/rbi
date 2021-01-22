@@ -70,8 +70,10 @@ class RBI
             return visit_begin(obj)
           when "Block"
             return visit_sig(obj)
-          when "DefMethod", "DefS"
+          when "DefMethod"
             return visit_def(obj)
+          when "DefS"
+            return visit_sdef(obj)
           when "Module", "Class"
             return visit_scope(obj)
           when "Send"
@@ -107,11 +109,11 @@ class RBI
         end
 
         def visit_def(obj)
-          @current_scope << Def.new(
-            obj["name"],
-            is_singleton: obj["type"] == "DefS",
-            params: make_params(obj["args"]),
-          )
+          @current_scope << Def.new(obj["name"], params: make_params(obj["args"]))
+        end
+
+        def visit_sdef(obj)
+          @current_scope << DefS.new(obj["name"], params: make_params(obj["args"]))
         end
 
         def visit_scope(obj)
