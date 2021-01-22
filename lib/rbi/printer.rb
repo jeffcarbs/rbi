@@ -347,17 +347,7 @@ class RBI
     def accept_printer(v)
       v.visit_all(comments)
       sigs.each { |sig| v.visit(sig) }
-      name = case self
-      when AttrReader
-        "attr_reader"
-      when AttrWriter
-        "attr_writer"
-      when AttrAccessor
-        "attr_accessor"
-      else
-        raise
-      end
-      v.printt(v.colorize(name, :yellow))
+      v.printt(v.colorize(kind, :yellow))
       unless names.empty?
         v.print(v.paren_attrs ? "(" : " ")
         v.print(names.map { |name| ":#{v.colorize(name.to_s, :light_magenta)}" }.join(", "))

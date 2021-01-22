@@ -127,6 +127,30 @@ class RBI
     end
   end
 
+  class CBase < NamedScope
+    extend T::Sig
+
+    sig { void }
+    def initialize
+      super("<cbase>")
+    end
+
+    sig { returns(String) }
+    def qualified_name
+      ""
+    end
+
+    sig { returns(String) }
+    def to_s
+      "::"
+    end
+
+    sig { override.returns(CBase) }
+    def dup_empty
+      CBase.new
+    end
+  end
+
   class Module < NamedScope
     extend T::Sig
 
@@ -209,30 +233,6 @@ class RBI
     sig { override.returns(SClass) }
     def dup_empty
       SClass.new(loc: loc)
-    end
-  end
-
-  class CBase < NamedScope
-    extend T::Sig
-
-    sig { void }
-    def initialize
-      super("<cbase>")
-    end
-
-    sig { returns(String) }
-    def qualified_name
-      ""
-    end
-
-    sig { returns(String) }
-    def to_s
-      "::"
-    end
-
-    sig { override.returns(CBase) }
-    def dup_empty
-      CBase.new
     end
   end
 
@@ -451,7 +451,6 @@ class RBI
 
   # Attributes
 
-  # TODO not a send?
   class Attr < Stmt
     extend T::Sig
     extend T::Helpers
@@ -472,16 +471,22 @@ class RBI
     end
 
     sig { returns(String) }
+    def kind
+      case self
+      when AttrReader
+        "attr_reader"
+      when AttrWriter
+        "attr_writer"
+      when AttrAccessor
+        "attr_accessor"
+      else
+        raise
+      end
+    end
+
+    sig { returns(String) }
     def qualified_name
-      method = case self
-               when AttrReader
-                 "attr_reader"
-               when AttrWriter
-                 "attr_writer"
-               when AttrAccessor
-                 "attr_accessor"
-               end
-      "#{named_parent_scope&.qualified_name}.#{method}(#{names.join(',')})"
+      "#{named_parent_scope&.qualified_name}.#{kind}(#{names.join(',')})"
     end
 
     sig { abstract.returns(Sig) }
@@ -598,7 +603,6 @@ class RBI
 
   # Sorbet
 
-  # TODO move away
   class Abstract < Send
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
@@ -662,7 +666,7 @@ class RBI
 
   # Sigs
 
-  # TODO simplify, not a block
+  # TODO simplify, not a block?
   class Sig < Stmt
     extend T::Sig
 

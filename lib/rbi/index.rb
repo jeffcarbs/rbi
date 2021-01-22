@@ -12,7 +12,7 @@ class RBI
   sig { params(rbis: T::Array[RBI]).returns(Index) }
   def self.index(rbis)
     index = Index.new
-    rbis.each { |rbi| index << rbi.root }
+    index.visit_rbis(rbis)
     index
   end
 
@@ -23,32 +23,12 @@ class RBI
     sig { void }
     def initialize
       super()
-      @index = T.let({}, T::Hash[String, T::Array[Node]])
+      @index = T.let({}, T::Hash[String, T::Array[T.all(Node, Indexable)]])
     end
 
-    sig { params(id: String).returns(T::Array[Node]) }
+    sig { params(id: String).returns(T::Array[T.all(Node, Indexable)]) }
     def [](id)
       @index[id] ||= []
-    end
-
-    sig { params(node: T.any(RBI, Node)).void }
-    def <<(node)
-      visit(node.is_a?(Node) ? node : node.root)
-    end
-
-    sig { params(node: Node).void }
-    def index(node)
-      self[id_for(node)] << node
-    end
-
-    sig { params(block: T.proc.params(pair: [String, T::Array[Node]]).void).void }
-    def each(&block)
-      @index.each(&block)
-    end
-
-    sig { returns(T::Array[String]) }
-    def keys
-      @index.keys
     end
 
     sig { returns(T::Boolean) }
@@ -56,29 +36,22 @@ class RBI
       @index.empty?
     end
 
-    sig { params(node: Node).returns(String) }
-    def id_for(node)
-      case node
-      when NamedScope, Const, Attr, Def, Send
-        node.qualified_name
-      else
-        raise "Can't create id for #{node}"
-      end
+    sig { returns(T::Array[String]) }
+    def keys
+      @index.keys
     end
 
-    sig { returns(String) }
-    def to_s
-      @index.to_s
+    sig { params(block: T.proc.params(pair: [String, T::Array[T.all(Node, Indexable)]]).void).void }
+    def each(&block)
+      @index.each(&block)
     end
 
-    sig { void }
-    def pretty_print
+    sig { params(out: T.any(IO, StringIO)).void }
+    def pretty_print(out: $stdout)
       @index.each do |key, values|
-        puts "#{key}: #{values.join(', ')}"
+        out.puts "#{key}: #{values.join(', ')}"
       end
     end
-
-    protected
 
     sig { override.params(node: T.nilable(Node)).void }
     def visit(node)
@@ -88,9 +61,76 @@ class RBI
       when NamedScope
         index(node)
         visit_all(node.body)
-      when Const, Def, Attr, Send
+      when Attr, Def, Const, Send
         index(node)
       end
+    end
+
+    private
+
+    sig { params(node: T.all(Node, Indexable)).void }
+    def index(node)
+      self[node.index_id] << node
+    end
+  end
+
+  module Indexable
+    extend T::Helpers
+    extend T::Sig
+
+    interface!
+
+    sig { abstract.returns(String) }
+    def index_id; end
+  end
+
+  class NamedScope
+    extend T::Sig
+    include Indexable
+
+    sig { override.returns(String) }
+    def index_id
+      qualified_name
+    end
+  end
+
+  class Def
+    extend T::Sig
+    include Indexable
+
+    sig { override.returns(String) }
+    def index_id
+      qualified_name
+    end
+  end
+
+  class Attr
+    extend T::Sig
+    include Indexable
+
+    sig { override.returns(String) }
+    def index_id
+      qualified_name
+    end
+  end
+
+  class Const
+    extend T::Sig
+    include Indexable
+
+    sig { override.returns(String) }
+    def index_id
+      qualified_name
+    end
+  end
+
+  class Send
+    extend T::Sig
+    include Indexable
+
+    sig { override.returns(String) }
+    def index_id
+      qualified_name
     end
   end
 end

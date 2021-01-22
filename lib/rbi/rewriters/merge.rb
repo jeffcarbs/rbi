@@ -38,28 +38,28 @@ class RBI
       def visit(node)
         return unless node
 
-        prev = @index[@index.id_for(node)].first
         scope = T.must(@scope_stack.last)
 
         case node
         when CBase
           visit_all(node.body)
-        when Scope
+        when NamedScope
+          prev = @index[node.index_id].first
           if prev.is_a?(Scope)
             @scope_stack << prev
           else
             copy = node.dup_empty
             scope << copy
-            @index << copy
+            @index.visit(copy)
             @scope_stack << copy
           end
           visit_all(node.body)
           @scope_stack.pop
-        when Stmt
-          return if prev
+        when Def, Attr, Send, Const
+          return if @index[node.index_id].first
           copy = node.dup
           scope << copy
-          @index << copy
+          @index.visit(copy)
         end
       end
     end

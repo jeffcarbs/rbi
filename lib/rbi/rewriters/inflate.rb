@@ -52,7 +52,7 @@ class RBI
           names = node.qualified_name.split(/::/)
           scope = T.let(@rbi.root, Scope)
           names[1...-1]&.each do |parent|
-            prev = @index[@index.id_for(node)].first
+            prev = @index[node.index_id].first
             # TODO error if not prev
             inner = case prev
                     when Module
