@@ -1,4 +1,4 @@
-# typed: ignore
+# typed: true
 # frozen_string_literal: true
 
 class RBI
@@ -26,17 +26,17 @@ class RBI
         parse_json(obj)
       end
 
-      private
-
-      sig { params(args: String).returns([String, String, T::Boolean]) }
-      def parse_with_sorbet(*args)
-        run_sorbet("--no-config", "--no-stdlib", "--stop-after=parser", "--print=parse-tree-json-with-locs", *args)
-      end
-
       sig { params(args: String).returns([String, String, T::Boolean]) }
       def run_sorbet(*args)
         out, err, status = Open3.capture3("bundle exec srb tc #{args.join(' ')}")
         [out, err, status.success?]
+      end
+
+      private
+
+      sig { params(args: String).returns([String, String, T::Boolean]) }
+      def parse_with_sorbet(*args)
+        T.unsafe(self).run_sorbet("--no-config", "--no-stdlib", "--stop-after=parser", "--print=parse-tree-json-with-locs", *args)
       end
 
       def parse_json(obj)
@@ -123,7 +123,7 @@ class RBI
           when "Class"
             Class.new(make_name(obj["name"]), superclass: make_name(obj["superclass"]))
           else
-            raise "Unsupported node #{node.type}"
+            raise "Unsupported node #{obj.type}"
           end
 
           # body = visit(obj["body"])
@@ -165,7 +165,7 @@ class RBI
             name = obj["args"][0]["val"]
             type = ExpBuilder.build(obj["args"][1])
             default = ExpBuilder.build(obj["args"][2]["pairs"][0]["value"])
-            @current_scope << TConst.new(name, type: type, default: default)
+            @current_scope << TConst.new(name, type: T.must(type), default: default)
           when "extend"
             names = make_args(obj["args"])
             @current_scope << Extend.new(*names)
@@ -185,7 +185,7 @@ class RBI
             name = obj["args"][0]["val"]
             type = ExpBuilder.build(obj["args"][1])
             default = ExpBuilder.build(obj["args"][2]["pairs"][0]["value"])
-            @current_scope << TProp.new(name, type: type, default: default)
+            @current_scope << TProp.new(name, type: T.must(type), default: default)
           when "protected"
             @current_scope << Protected.new
           when "private"
@@ -196,7 +196,7 @@ class RBI
         end
 
         def visit_sig(obj)
-          @current_scope << SigBuilder.build(obj)
+          @current_scope << T.must(SigBuilder.build(obj))
         end
 
         def make_args(arr)
@@ -255,7 +255,6 @@ class RBI
 
           sig { params(node: T::Hash[String, T.untyped]).returns(T.nilable(Sig)) }
           def self.build(node)
-            return nil unless node
             raise unless node["type"] == "Block" && node["send"]["method"] == "sig"
             v = SigBuilder.new
             v.visit(node["body"])
@@ -291,7 +290,7 @@ class RBI
               @current << Sig::Params.new(node["args"][0]["pairs"].map do |child|
                 name = child["key"]["val"]
                 type = ExpBuilder.build(child["value"])
-                Param.new(name, type: type)
+                Sig::Param.new(name, type: type)
               end)
             when "abstract"
               @current << Sig::Abstract.new

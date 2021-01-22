@@ -685,6 +685,34 @@ class RBI
       end
     end
 
+    class Param < Node
+      extend T::Sig
+
+      sig { returns(String) }
+      attr_reader :name
+
+      sig { returns(T.nilable(String)) }
+      attr_reader :type
+
+      sig do
+        params(
+          name: String,
+          type: T.nilable(String),
+          loc: T.nilable(Loc)
+        ).void
+      end
+      def initialize(name, type: nil, loc: nil)
+        super(loc: loc)
+        @name = name
+        @type = type
+      end
+
+      sig { returns(String) }
+      def to_s
+        name
+      end
+    end
+
     class Params < Builder
       extend T::Sig
 

@@ -45,7 +45,7 @@ class RBI
       sig = Sig.new
       unless params.empty?
         sig << Sig::Params.new(
-          params.map { |param| Param.new(param.name, type: "T.untyped") }
+          params.map { |param| Sig::Param.new(param.name, type: "T.untyped") }
         )
       end
       sig << Sig::Returns.new("T.untyped")
@@ -77,7 +77,7 @@ class RBI
     sig { override.returns(Sig) }
     def template_sig
       sig = Sig.new
-      sig << Sig::Params.new(names.map { |name| Param.new(name.to_s, type: "T.untyped") })
+      sig << Sig::Params.new(names.map { |name| Sig::Param.new(name.to_s, type: "T.untyped") })
       sig << Sig::Void.new
       sig
     end
@@ -89,7 +89,7 @@ class RBI
     sig { override.returns(Sig) }
     def template_sig
       sig = Sig.new
-      sig << Sig::Params.new(names.map { |name| Param.new(name.to_s, type: "T.untyped") })
+      sig << Sig::Params.new(names.map { |name| Sig::Param.new(name.to_s, type: "T.untyped") })
       sig << Sig::Returns.new("T.untyped")
       sig
     end

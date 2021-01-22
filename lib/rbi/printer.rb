@@ -499,6 +499,15 @@ class RBI
       end
     end
 
+    class Param
+      extend T::Sig
+
+      sig { override.params(v: Printer).void }
+      def accept_printer(v)
+        v.print(v.colorize("#{name}: #{type}", :light_black))
+      end
+    end
+
     class Params
       extend T::Sig
 
@@ -516,7 +525,7 @@ class RBI
               v.printn unless v.fold_sig
             end
             v.printt unless v.fold_sig
-            v.print(v.colorize("#{param.name}: #{param.type}", :light_black))
+            v.visit(param)
           end
           v.dedent
           unless v.fold_sig

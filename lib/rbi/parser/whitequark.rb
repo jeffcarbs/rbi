@@ -245,7 +245,7 @@ class RBI
             Sig::Params.new(node.children[2].children.map do |child|
               name = child.children[0].children[0].to_s
               type = ExpBuilder.visit(child.children[1])
-              Param.new(name, type: type)
+              Sig::Param.new(name, type: type)
             end)
           when :returns
             Sig::Returns.new(ExpBuilder.visit(node.children[2]))
