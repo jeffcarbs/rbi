@@ -295,28 +295,15 @@ class RBI
   # Params
 
   class Param < Node
-    extend T::Helpers
     extend T::Sig
-
-    abstract!
 
     sig { returns(String) }
     attr_reader :name
 
-    sig { returns(T.nilable(String)) }
-    attr_reader :type
-
-    sig do
-      params(
-        name: String,
-        type: T.nilable(String),
-        loc: T.nilable(Loc)
-      ).void
-    end
-    def initialize(name, type: nil, loc: nil)
+    sig { params(name: String, loc: T.nilable(Loc)).void }
+    def initialize(name, loc: nil)
       super(loc: loc)
       @name = name
-      @type = type
     end
 
     sig { returns(String) }
@@ -325,44 +312,30 @@ class RBI
     end
   end
 
-  class ParamWithValue < Param
-    extend T::Helpers
+  class OptParam < Param
     extend T::Sig
-
-    abstract!
 
     sig { returns(T.nilable(String)) }
     attr_reader :value
 
-    sig do
-      params(
-        name: String,
-        value: T.nilable(String),
-        type: T.nilable(String),
-        loc: T.nilable(Loc)
-      ).void
-    end
-    def initialize(name, value: nil, type: nil, loc: nil)
-      super(name, type: type, loc: loc)
+    sig { params(name: String, value: T.nilable(String), loc: T.nilable(Loc)).void }
+    def initialize(name, value: nil, loc: nil)
+      super(name, loc: loc)
       @value = value
     end
   end
 
   # TODO remove? rename as param?
 
-  class Arg < Param; end
+  class RestParam < Param; end
 
-  class OptArg < ParamWithValue; end
+  class KwParam < Param; end
 
-  class RestArg < Param; end
+  class KwOptParam < OptParam; end
 
-  class KwArg < Param; end
+  class KwRestParam < Param; end
 
-  class KwOptArg < ParamWithValue; end
-
-  class KwRestArg < Param; end
-
-  class BlockArg < Param; end
+  class BlockParam < Param; end
 
   # Attributes
 

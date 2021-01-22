@@ -358,7 +358,7 @@ class RBI
     end
   end
 
-  class Arg
+  class Param
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -367,7 +367,7 @@ class RBI
     end
   end
 
-  class OptArg
+  class OptParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -376,7 +376,7 @@ class RBI
     end
   end
 
-  class RestArg
+  class RestParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -385,7 +385,7 @@ class RBI
     end
   end
 
-  class KwArg
+  class KwParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -394,7 +394,7 @@ class RBI
     end
   end
 
-  class KwOptArg
+  class KwOptParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -403,7 +403,7 @@ class RBI
     end
   end
 
-  class KwRestArg
+  class KwRestParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }
@@ -412,7 +412,7 @@ class RBI
     end
   end
 
-  class BlockArg
+  class BlockParam
     extend T::Sig
 
     sig { override.params(v: Printer).void }

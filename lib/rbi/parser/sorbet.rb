@@ -228,23 +228,23 @@ class RBI
           name = obj["name"]
           case obj["type"]
           when "Arg"
-            Arg.new(name)
+            Param.new(name)
           when "Optarg"
             default = obj["default_"]
             value = ExpBuilder.build(default) if default
-            OptArg.new(name, value: value)
+            OptParam.new(name, value: value)
           when "Restarg"
-            RestArg.new(name)
+            RestParam.new(name)
           when "Kwarg"
-            KwArg.new(name)
+            KwParam.new(name)
           when "Kwoptarg"
             default = obj["default_"]
             value = ExpBuilder.build(default) if default
-            KwOptArg.new(name, value: value)
+            KwOptParam.new(name, value: value)
           when "Kwrestarg"
-            KwRestArg.new(name)
+            KwRestParam.new(name)
           when "Blockarg"
-            BlockArg.new(name)
+            BlockParam.new(name)
           else
             raise "Unkown arg type #{obj}"
           end

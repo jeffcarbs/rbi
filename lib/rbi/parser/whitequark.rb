@@ -366,19 +366,19 @@ class RBI
         def visit_param(node)
           param = case node.type
           when :arg
-            Arg.new(node.children[0].to_s)
+            Param.new(node.children[0].to_s)
           when :optarg
-            OptArg.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
+            OptParam.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
           when :restarg
-            RestArg.new(node.children[0].to_s)
+            RestParam.new(node.children[0].to_s)
           when :kwarg
-            KwArg.new(node.children[0].to_s)
+            KwParam.new(node.children[0].to_s)
           when :kwoptarg
-            KwOptArg.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
+            KwOptParam.new(node.children[0].to_s, value: ExpBuilder.visit(node.children[1]))
           when :kwrestarg
-            KwRestArg.new(node.children[0].to_s)
+            KwRestParam.new(node.children[0].to_s)
           when :blockarg
-            BlockArg.new(node.children[0].to_s)
+            BlockParam.new(node.children[0].to_s)
           else
             raise "Unkown arg type #{node.type}"
           end
