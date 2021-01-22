@@ -95,9 +95,6 @@ class RBI
       node.parent_scope = self
       @body << node
     end
-
-    sig { abstract.returns(Scope) }
-    def dup_empty; end
   end
 
   class NamedScope < Scope
@@ -144,11 +141,6 @@ class RBI
     def to_s
       "::"
     end
-
-    sig { override.returns(CBase) }
-    def dup_empty
-      CBase.new
-    end
   end
 
   class Module < NamedScope
@@ -168,11 +160,6 @@ class RBI
     sig { returns(T::Boolean) }
     def interface?
       body.one? { |child| child.is_a?(Interface) }
-    end
-
-    sig { override.returns(Module) }
-    def dup_empty
-      Module.new(name, loc: loc)
     end
   end
 
@@ -215,11 +202,6 @@ class RBI
     def sealed?
       body.one? { |child| child.is_a?(Sealed) }
     end
-
-    sig { override.returns(Class) }
-    def dup_empty
-      Class.new(name, superclass: superclass, loc: loc)
-    end
   end
 
   class SClass < NamedScope
@@ -228,11 +210,6 @@ class RBI
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
       super("<self>", loc: loc)
-    end
-
-    sig { override.returns(SClass) }
-    def dup_empty
-      SClass.new(loc: loc)
     end
   end
 
@@ -414,15 +391,11 @@ class RBI
     sig { returns(T::Array[String]) }
     attr_reader :args
 
-    sig { returns(T.nilable(Block)) }
-    attr_reader :block
-
-    sig { params(method: ::Symbol, args: T::Array[String], block: T.nilable(Block), loc: T.nilable(Loc)).void }
-    def initialize(method, args: [], block: nil, loc: nil)
+    sig { params(method: ::Symbol, args: T::Array[String], loc: T.nilable(Loc)).void }
+    def initialize(method, args: [], loc: nil)
       super(loc: loc)
       @method = method
       @args = args
-      @block = block
     end
 
     sig { returns(String) }
@@ -433,19 +406,6 @@ class RBI
     sig { returns(String) }
     def to_s
       method.to_s
-    end
-  end
-
-  class Block < Scope
-    # TODO
-    # Scope without name
-    # Scope generic?
-    # Block call?
-    # Sig is block call?
-
-    sig { override.returns(Block) }
-    def dup_empty
-      Block.new(loc: loc)
     end
   end
 

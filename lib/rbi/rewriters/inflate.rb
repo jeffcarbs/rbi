@@ -54,17 +54,8 @@ class RBI
           names[1...-1]&.each do |parent|
             prev = @index[node.index_id].first
             # TODO error if not prev
-            inner = case prev
-                    when Module
-                      Module.new(parent)
-                    when Class
-                      # TODO save ancestors?
-                      Class.new(parent)
-                    when SClass
-                      SClass.new
-                    else
-                      raise
-                    end
+            inner = T.cast(prev, Scope).stub_empty
+            inner.name = parent
             scope << inner
             scope = inner
           end
