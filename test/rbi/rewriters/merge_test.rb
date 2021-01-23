@@ -148,6 +148,96 @@ class RBI
       EXP
     end
 
+    def test_merge_sclass_differenciate_methods
+      rbi1 = <<~RBI
+        module A
+          def foo; end
+
+          class << self
+            def foo; end
+          end
+        end
+      RBI
+      rbi2 = <<~RBI
+        module A
+          def bar; end
+
+          class << self
+            def bar; end
+          end
+        end
+      RBI
+      assert_merge_equal(<<~EXP, rbi1, rbi2)
+        module A
+          def foo; end
+
+          class << self
+            def foo; end
+            def bar; end
+          end
+
+          def bar; end
+        end
+      EXP
+    end
+
+    def test_merge_scopes_with_sclass
+      rbi1 = <<~RBI
+        module A
+          module B
+            class << self
+              def b1; end
+            end
+          end
+        end
+        module A
+          class << self
+            def a1; end
+          end
+          module B
+            class << self
+              def b2; end
+            end
+          end
+        end
+      RBI
+      rbi2 = <<~RBI
+        module A
+          class << self
+            def a2; end
+          end
+          module B
+            class << self
+              def b3; end
+            end
+          end
+        end
+        module A
+          class << self
+            def a3; end
+          end
+        end
+      RBI
+      assert_merge_equal(<<~EXP, rbi1, rbi2)
+        module A
+          module B
+            class << self
+              def b1; end
+              def b2; end
+              def b3; end
+            end
+          end
+
+          class << self
+            def a1; end
+            def a2; end
+            def a3; end
+          end
+        end
+      EXP
+    end
+
+
     private
 
     def assert_merge_equal(exp, rbi1, rbi2)

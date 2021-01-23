@@ -55,8 +55,12 @@ class RBI
           @scope_stack.pop
         when Const
           copy = node.dup
-          copy.name = node.qualified_name
-          @rbi.root << copy
+          if node.parent_scope.is_a?(SClass)
+            scope << node.dup
+          else
+            copy.name = node.qualified_name
+            @rbi.root << copy
+          end
         when Stmt
           scope << node.dup
         end

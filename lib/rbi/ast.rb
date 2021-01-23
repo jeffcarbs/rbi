@@ -204,12 +204,12 @@ class RBI
     end
   end
 
-  class SClass < Scope
+  class SClass < NamedScope
     extend T::Sig
 
     sig { params(loc: T.nilable(Loc)).void }
     def initialize(loc: nil)
-      super(loc: loc)
+      super("<self>", loc: loc)
     end
   end
 

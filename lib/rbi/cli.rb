@@ -72,7 +72,12 @@ class RBI
       paths = [path, *paths]
       files = expand_paths(paths)
       rbis = parse_files(files)
-      puts T.unsafe(RBI).merge(*rbis.map(&:last)).to_rbi(color: color?)
+      puts T.unsafe(RBI).merge(*rbis.map(&:last)).to_rbi(
+        color: color?,
+        fold_empty_scopes: false,
+        paren_includes: true,
+        paren_mixes: true,
+      )
     end
 
     desc 'flatten', 'Flatten RBIs'

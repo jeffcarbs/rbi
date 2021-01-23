@@ -143,10 +143,10 @@ class RBI
         end
 
         module ::Foo::Bar
-          class << self; end
+          class << self
+            BAR = 10
+          end
         end
-
-        ::Foo::Bar::BAR = 10
       EXP
     end
 
