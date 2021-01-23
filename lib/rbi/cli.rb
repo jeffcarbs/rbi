@@ -72,7 +72,7 @@ class RBI
       paths = [path, *paths]
       files = expand_paths(paths)
       rbis = parse_files(files)
-      puts T.unsafe(RBI).merge(*rbis.map(&:last)).to_rbi(
+      puts T.unsafe(RBI).merge(*rbis.map(&:last).map(&:collect_sigs)).to_rbi(
         color: color?,
         fold_empty_scopes: false,
         paren_includes: true,
