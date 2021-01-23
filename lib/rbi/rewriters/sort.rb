@@ -40,6 +40,8 @@ class RBI
       sig { params(node: Node).returns(Integer) }
       def kind_rank(node)
         case node
+        when RBI::Group
+          group_rank(node)
         when Include, Prepend, Extend
           0
         when Module, Class, Const
@@ -50,6 +52,28 @@ class RBI
           3
         else
           4
+        end
+      end
+
+      sig { params(group: RBI::Group).returns(Integer) }
+      def group_rank(group)
+        case group.kind
+        when :includes
+          0
+        when :sorbet
+          1
+        when :consts
+          2
+        when :attrs
+          3
+        when :defss
+          4
+        when :defs
+          5
+        when :scopes
+          6
+        else
+          7
         end
       end
 

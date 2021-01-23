@@ -36,8 +36,8 @@ class RBI
           node.sigs.concat(@sigs)
           @sigs.clear
         when Sig
+          node.detach
           @sigs << node
-          T.must(node.parent_scope).body.delete(node)
         end
       end
     end

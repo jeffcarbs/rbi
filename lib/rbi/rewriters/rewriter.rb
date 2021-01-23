@@ -10,6 +10,16 @@ class RBI
     class Error < RBI::Error; end
   end
 
+  class Stmt
+    extend T::Sig
+
+    sig { void }
+    def detach
+      T.must(self.parent_scope).body.delete(self)
+      self.parent_scope = nil
+    end
+  end
+
   class Scope
     extend T::Sig
 
