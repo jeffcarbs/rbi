@@ -64,16 +64,20 @@ class RBI
           1
         when :consts
           2
-        when :attrs
+        when :props
           3
-        when :defss
+        when :attrs
           4
-        when :defs
+        when :inits
           5
-        when :scopes
+        when :defss
           6
-        else
+        when :defs
           7
+        when :scopes
+          8
+        else
+          9
         end
       end
 

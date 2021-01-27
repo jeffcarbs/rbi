@@ -32,14 +32,16 @@ class RBI
 
         case node
         when Scope
-          kinds = node.body.map(&:group_kind).uniq
+          kinds = node.body.map(&:group_kind).compact.uniq
           groups = {}
           kinds.each { |kind| groups[kind] = RBI::Group.new(kind) }
 
           node.body.dup.each do |child|
+            kind = child.group_kind
+            next unless kind
             visit(child)
             child.detach
-            groups[child.group_kind] << child
+            groups[kind] << child
           end
 
           groups.each { |_, group| node << group }
@@ -51,7 +53,7 @@ class RBI
   class Node
     extend T::Sig
 
-    sig { returns(Symbol) }
+    sig { returns(T.nilable(Symbol)) }
     def group_kind
       case self
       when Const
@@ -65,9 +67,17 @@ class RBI
       when DefS
         :defss
       when Def
-        :defs
+        if name == "initialize"
+          :inits
+        else
+          :defs
+        end
+      when TProp, TConst
+        :props
       when NamedScope
         :scopes
+      when Public, Private, Protected
+        nil
       else
         raise "Unknown group for #{self}"
       end
@@ -88,6 +98,7 @@ class RBI
 
     sig { override.params(v: Printer).void }
     def accept_printer(v)
+      v.printn
       v.visit_scope(body)
     end
   end

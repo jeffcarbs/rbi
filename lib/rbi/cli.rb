@@ -113,7 +113,7 @@ class RBI
       files = expand_paths(paths)
       files.each do |file|
         content_before = File.read(file)
-        content_after = RBI.from_string(content_before)&.to_rbi(
+        content_after = RBI.from_string(content_before)&.collect_sigs&.group&.to_rbi(
           fold_empty_scopes: false,
           paren_includes: true,
           paren_mixes: true,
@@ -121,8 +121,8 @@ class RBI
         next if content_after&.empty?
         file1 = "#{file}.f1"
         file2 = "#{file}.f2"
-        File.write(file1, content_before.gsub(/\n\n/, "\n"))
-        File.write(file2, content_after&.gsub(/\n\n/, "\n"))
+        File.write(file1, content_before)
+        File.write(file2, content_after)
         system("diff -u #{file1} #{file2}")
         FileUtils.rm(file1)
         FileUtils.rm(file2)
