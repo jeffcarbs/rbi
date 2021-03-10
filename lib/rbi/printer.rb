@@ -183,7 +183,7 @@ class RBI
     def visit_scope(nodes)
       previous = T::Array[Node].new
       nodes.each_with_index do |node, _index|
-        # printn if blank_before?(node, previous)
+        printn if blank_before?(node, previous)
         visit(node)
         previous << node
       end

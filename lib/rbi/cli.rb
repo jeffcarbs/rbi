@@ -130,7 +130,7 @@ class RBI
     end
 
     desc 'validate', 'Validate RBIs against a set of rules'
-    option :short, type: :boolean, default: false, desc: 'Shortten the output'
+    option :short, type: :boolean, default: false, desc: 'Shorten the output'
     option :files, type: :boolean, default: false, desc: 'Show only files containing errors'
     option :forbid_scopes_reopen, type: :boolean, default: false, desc: ''
     option :forbid_tsig, type: :boolean, default: true, desc: 'Forbid usage of `extend T::Sig` in RBIs'
